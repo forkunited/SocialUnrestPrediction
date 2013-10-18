@@ -245,9 +245,9 @@ public class JsonTweet {
 			}
 			
 			
-			/*if (location.startsWith("†T: ")) {
+			/*if (location.startsWith("T: ")) {
 				try {
-					location=location.replaceAll("†T: ", "");
+					location=location.replaceAll("T: ", "");
 					String[] parts=location.split(",");
 					if (parts.length == 2) {
 						double la=Double.valueOf(parts[0]);
