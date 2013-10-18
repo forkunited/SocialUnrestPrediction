@@ -245,7 +245,7 @@ public class JsonTweet {
 			}
 			
 			
-			if (location.startsWith("†T: ")) {
+			/*if (location.startsWith("†T: ")) {
 				try {
 					location=location.replaceAll("†T: ", "");
 					String[] parts=location.split(",");
@@ -270,7 +270,7 @@ public class JsonTweet {
 					}
 					
 				}
-			}
+			}*/
 
 			
 
