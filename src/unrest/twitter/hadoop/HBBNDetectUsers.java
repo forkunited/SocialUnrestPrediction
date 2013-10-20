@@ -23,7 +23,7 @@ import unrest.twitter.JsonTweet;
 import unrest.util.StringUtil;
 
 public class HBBNDetectUsers {
-
+	
 	public static class BBNDetectUsersMapper extends Mapper<Object, Text, LongWritable, Text> {
 		private LongWritable userId = new LongWritable(0);
 		private Text predictionText = new Text();

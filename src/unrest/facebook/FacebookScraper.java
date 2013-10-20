@@ -60,7 +60,7 @@ public class FacebookScraper {
 	
 	
 	public FacebookScraper() {
-		this.properties = new UnrestProperties("unrest.properties");
+		this.properties = new UnrestProperties();
 		this.logFile = new File(this.properties.getFacebookDataScrapeDirPath(), "Log");
 		this.seedPageUrlsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "SeedPageUrls");
 		this.currentPageIdsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "CurrentPageIds");

@@ -1,12 +1,12 @@
 package unrest.data;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import unrest.util.FileUtil;
 import unrest.util.StringUtil;
 
 /**
@@ -26,7 +26,7 @@ public class Gazetteer {
 		this.name = name;
 		
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(sourceFilePath));
+			BufferedReader br = FileUtil.getFileReader(sourceFilePath);
 			String line = null;
 			while ((line = br.readLine()) != null) {
 				String[] lineValues = line.trim().split("\\t");

@@ -8,7 +8,8 @@ public class DetectorBBN extends DetectorConjunction {
 	public DetectorBBN() {
 		super();
 	
-		UnrestProperties properties = new UnrestProperties("unrest.properties");
+		UnrestProperties properties = new UnrestProperties();
+		
 		Gazetteer unrestTermGazetteer = new Gazetteer("UnrestTerm", properties.getUnrestTermGazetteerPath(), StringUtil.getDefaultCleanFn());
 		Gazetteer unrestLocationGazetteer = new Gazetteer("UnrestLocation", properties.getUnrestLocationGazetteerPath(), StringUtil.getDefaultCleanFn());
 		

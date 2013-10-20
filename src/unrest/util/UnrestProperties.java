@@ -1,6 +1,6 @@
 package unrest.util;
 
-import java.io.FileReader;
+import java.io.Reader;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -12,11 +12,16 @@ public class UnrestProperties {
 	private String facebookAppSecret;
 	private String facebookDataScrapeDirPath;
 	
-	public UnrestProperties(String propertiesPath) {
+	public UnrestProperties() {
+		this(FileUtil.getPropertiesReader());
+	}
+	
+	public UnrestProperties(Reader propertiesReader) {
 		try {
-			FileReader reader = new FileReader(propertiesPath);
+			
 			Properties properties = new Properties();
-			properties.load(reader);
+			properties.load(propertiesReader);
+			
 			Map<String, String> env = System.getenv();
 			
 			this.unrestTermGazetteerPath = loadProperty(env, properties, "unrestTermGazetteerPath");
@@ -25,7 +30,7 @@ public class UnrestProperties {
 			this.facebookAppSecret = loadProperty(env, properties, "facebookAppSecret");
 			this.facebookDataScrapeDirPath = loadProperty(env, properties, "facebookDataScrapeDirPath");
 			
-			reader.close();
+			propertiesReader.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
