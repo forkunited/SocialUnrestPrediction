@@ -27,7 +27,7 @@ public class JsonTweet {
 
 	public static SimpleDateFormat df=new SimpleDateFormat("EEE MMM d H:m:s Z yyyy");
 
-	long id;
+	double id;
 	int utcOffset;
 	int userId;
 	String userLanguage;
@@ -48,7 +48,7 @@ public class JsonTweet {
 	public int getUserId() {
 		return userId;
 	}
-	public JsonTweet(long id, String userLanguage, String userLocation, String geo, Date date, String text, int userId, int utcOffset, String name, String username, String description) {
+	public JsonTweet(double id, String userLanguage, String userLocation, String geo, Date date, String text, int userId, int utcOffset, String name, String username, String description) {
 		this.id=id;
 		this.userLanguage=userLanguage;
 		if (userLocation == null) {
@@ -75,7 +75,7 @@ public class JsonTweet {
 	}
 	public JsonTweet(String[] parts) {
 		
-		id=Long.valueOf(parts[0]);
+		id=Double.valueOf(parts[0]);
 		userId=Integer.valueOf(parts[4]);
 		userLanguage=parts[5];
 		followersCount=Integer.valueOf(parts[6]);
@@ -94,7 +94,7 @@ public class JsonTweet {
 		String location=null;
 		String geo=null;
 		String userLanguage=null;
-		long id=-1;
+		double id=-1;
 		int userId=-1;
 		int followerCount=-1;
 		int friendCount=-1;
@@ -128,7 +128,7 @@ public class JsonTweet {
 		
 		
 		String dateString=(String)jsonObject.get("created_at");
-		id=(Long)jsonObject.get("id");
+		id=(Double)jsonObject.get("id");
 	
 		if (dateString == null) {
 			return null;
@@ -290,10 +290,10 @@ public class JsonTweet {
 	public static void setDf(SimpleDateFormat df) {
 		JsonTweet.df = df;
 	}
-	public long getId() {
+	public double getId() {
 		return id;
 	}
-	public void setId(long id) {
+	public void setId(double id) {
 		this.id = id;
 	}
 	public String getUserLanguage() {
