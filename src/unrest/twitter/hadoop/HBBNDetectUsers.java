@@ -59,23 +59,17 @@ public class HBBNDetectUsers {
 				if (tweet != null) {
 					String tweetText = this.cleanFn.transform(tweet.getText());
 					
-					/////
-					this.userId.set(tweet.getUserId());
-					this.predictionText.set(tweetText);
-					context.write(this.userId, this.predictionText);
-					////
-					
-					/*this.tweetDate.setTime(tweet.getDate());
+					this.tweetDate.setTime(tweet.getDate());
 					Detector.Prediction prediction = this.unrestDetector.getPrediction(tweetText, this.tweetDate);
 					if (prediction != null) {
 						this.userId.set(tweet.getUserId());
 						this.predictionText.set(prediction.toString());
 						context.write(this.userId, this.predictionText);
-					}*/
+					}
 				}
 
 			} catch (Exception e1) {
-				
+				e1.printStackTrace();
 			}
 		}
 	}
