@@ -1,10 +1,14 @@
 package unrest.detector;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 import net.sf.json.JSONObject;
 
 public abstract class Detector {
+	private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	
 	// This will probably change later
 	public class Prediction {
 		private Calendar minTime;
@@ -47,8 +51,8 @@ public abstract class Detector {
 		public String toString() {
 			JSONObject json = new JSONObject();
 			json.put("text", this.sourceText);
-			json.put("minTime", this.minTime.toString());
-			json.put("maxTime", this.maxTime.toString());
+			json.put("minTime", dateFormat.format(this.minTime.getTime()));
+			json.put("maxTime", dateFormat.format(this.maxTime.getTime()));
 			json.put("location", this.location);
 			return json.toString();
 		}
