@@ -37,6 +37,8 @@ public class Gazetteer {
 				String id = lineValues[0];
 				for (int i = 1; i < lineValues.length; i++) {
 					String cleanValue = cleanString(lineValues[i]);
+					if (cleanValue.length() == 0)
+						continue;
 					if (!this.gazetteer.containsKey(cleanValue))
 						this.gazetteer.put(cleanValue, new ArrayList<String>(2));
 					if (!this.gazetteer.get(cleanValue).contains(id))

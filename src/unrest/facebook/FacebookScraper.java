@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,6 +45,7 @@ import unrest.util.UnrestProperties;
  */
 
 public class FacebookScraper {
+	private static SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static int MAX_PAGE_QUERIES_PER_ITERATION = 200;
 	private static int MAX_ERROR_RETRIES = 5;
 	private static int ERROR_SLEEP_MILLIS = 1000*60*10; // 10 min
@@ -186,7 +188,14 @@ public class FacebookScraper {
 	}
 	
 	private Set<String> retrieveSeedPageIds() {
-		String[] seedPageUrls = (String[])loadSeedPageUrls().toArray();
+		Set<String> seedPageUrlSet = loadSeedPageUrls();
+		String[] seedPageUrls = new String[seedPageUrlSet.size()];
+		int i = 0;
+		for (String seedPageUrl : seedPageUrlSet) {
+			seedPageUrls[i] = seedPageUrl;
+			i++;
+		}
+		
 		writeLog("Retrieving seed page ids for " + seedPageUrls.length + " pages...");
 		
 		String[] seedPageData = executeFacebookRequests(seedPageUrls);
@@ -400,7 +409,9 @@ public class FacebookScraper {
 	private void writeLog(String log) {
 		try {
 			BufferedWriter w = new BufferedWriter(new FileWriter(this.logFile, true));
-			w.write(Calendar.getInstance().toString() + "\t" + log + "\n");
+			String logStr = LOG_DATE_FORMAT.format(Calendar.getInstance().getTime()) + "\t" + log;
+			w.write(logStr + "\n");
+			System.out.println(logStr);
 			w.close();
 	    } catch (IOException e) { 
 	    	e.printStackTrace(); 

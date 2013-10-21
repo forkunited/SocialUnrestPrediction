@@ -21,7 +21,7 @@ public class DetectorConjunction extends Detector {
 		for (Detector detector : this.detectors) {
 			Prediction currentPrediction = detector.getPrediction(text, textTime);
 			if (currentPrediction == null)
-				continue;
+				return null;
 			
 			if (prediction == null) {
 				prediction = new Prediction(currentPrediction.getMinTime(), currentPrediction.getMaxTime(), currentPrediction.getLocation(), text);
