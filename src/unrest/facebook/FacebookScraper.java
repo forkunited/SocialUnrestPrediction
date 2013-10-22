@@ -45,8 +45,10 @@ import unrest.util.UnrestProperties;
  */
 
 public class FacebookScraper {
+	private static CharSequence FACEBOOK_IGNORE_URL = "https://graph.facebook.com/";
 	private static SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static int MAX_PAGE_QUERIES_PER_ITERATION = 200;
+	private static int MAX_PAGE_QUERIES_PER_ITERATION = 12;
+	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 50;
 	private static int MAX_ERROR_RETRIES = 5;
 	private static int ERROR_SLEEP_MILLIS = 1000*60*10; // 10 min
 	
@@ -137,14 +139,20 @@ public class FacebookScraper {
 		Set<String> pageIds = new HashSet<String>();
 		for (JsonObject pageDatum : pageData) {
 			if (!pageDatum.has("likes") || !pageDatum.getJsonObject("likes").has("data")) {
-				writeLog("Page data is missing likes (" + pageDatum.getJsonObject("main").getString("id") + ").  Skipping...");
+				if (pageDatum.has("main"))
+					writeLog("Page data is missing likes (" + pageDatum.getJsonObject("main").getString("id") + ").  Skipping...");
+				else
+					writeLog("Page data is missing likes and main... Skipping...");
 				continue;
 			}
 			JsonArray likes = pageDatum.getJsonObject("likes").getJsonArray("data");
 			for (int i = 0; i < likes.length(); i++) {
 				JsonObject like = likes.getJsonObject(i);
 				if (!like.has("id")) {
-					writeLog("Page data like is missing id (" + pageDatum.getJsonObject("main").getString("id") + "). Skipping...");
+					if (pageDatum.has("main"))
+						writeLog("Page data like is missing id (" + pageDatum.getJsonObject("main").getString("id") + "). Skipping...");
+					else
+						writeLog("Page data like is missing id and main... Skipping...");
 					continue;
 				}
 				pageIds.add(like.getString("id"));
@@ -154,7 +162,7 @@ public class FacebookScraper {
 	}
 	
 	private List<JsonObject> retrievePageData(Set<String> pageIds) {
-		writeLog("Retrieveing page data...");
+		writeLog("Retrieving page data...");
 		String[] pageDataRequests = new String[pageIds.size()*4];
 		int i = 0;
 		for (String pageId : pageIds) {
@@ -169,13 +177,32 @@ public class FacebookScraper {
 		for (i = 0; i < pageDataResponses.length; i++) {
 			if (pageDataResponses[i] == null)
 				continue;
-			if (!pageDataRequests[i].contains("/")) {
+			if (pageDataRequests[i].contains("/")) {
 				String[] requestParts = pageDataRequests[i].split("/");
 				String pageId = requestParts[0];
 				String requestType = requestParts[1];
 				if (!pageData.containsKey(pageId))
 					pageData.put(pageId, new JsonObject());
-				pageData.get(pageId).put(requestType, new JsonObject(pageDataResponses[i]));
+
+				List<JsonObject> pages = new ArrayList<JsonObject>();
+				JsonObject currentPage = new JsonObject(pageDataResponses[i]);
+				pages.add(currentPage);
+				
+				while (currentPage.has("paging") && currentPage.getJsonObject("paging").has("next")) {
+					writeLog("Retrieving more pages for " + pageDataRequests[i] + "...");
+					String nextRequest = currentPage.getJsonObject("paging")
+													.getString("next")
+													.replace(FacebookScraper.FACEBOOK_IGNORE_URL, "");
+					String[] nextResponse = executeFacebookRequests(new String[] {nextRequest});
+					if (nextResponse[0] == null)
+						break;
+					currentPage = new JsonObject(nextResponse[0]);
+					pages.add(currentPage);
+				}
+				
+				JsonArray pageArray = new JsonArray(pages);
+				pageData.get(pageId).put(requestType, pageArray);
+				
 			} else {
 				String pageId = pageDataRequests[i];
 				if (!pageData.containsKey(pageId))
@@ -206,7 +233,9 @@ public class FacebookScraper {
 			JsonObject pageObj = new JsonObject(seedPageDatum);
 			if (!pageObj.has("id"))
 				continue;
-			pageIds.add(pageObj.getString("id"));
+			String pageId = pageObj.getString("id");
+			if (!pageId.contains("/"))
+				pageIds.add(pageId);
 		}
 		writeLog("Retrieved " + pageIds.size() + " pages.");
 		return pageIds;
@@ -214,6 +243,28 @@ public class FacebookScraper {
 	
 	private String[] executeFacebookRequests(String[] requests) {
 		writeLog("Executing Facebook requests...");
+		
+		if (requests.length > FacebookScraper.MAX_FACEBOOK_REQUESTS_PER_BATCH) {
+			String[] responses = new String[requests.length];
+			int totalRequested = 0;
+			while (totalRequested < requests.length) {
+				int toRequest = Math.min(totalRequested+FacebookScraper.MAX_FACEBOOK_REQUESTS_PER_BATCH, requests.length) - totalRequested;
+				String[] partialRequests = new String[toRequest];
+				for (int i = totalRequested; i < totalRequested + toRequest; i++) {
+					partialRequests[i - totalRequested] = requests[i];
+				}
+				
+				String[] partialResponses = executeFacebookRequests(partialRequests);
+				for (int i = totalRequested; i < totalRequested + toRequest; i++) {
+					responses[i] = partialResponses[i - totalRequested];
+				}
+				
+				totalRequested += toRequest;
+			}
+			
+			return responses;
+		}
+		
 		String[] responses = new String[requests.length];
 		BatchRequest[] batchRequests = new BatchRequest[requests.length];
 		for (int i = 0; i < batchRequests.length; i++) {
@@ -226,12 +277,12 @@ public class FacebookScraper {
 			try {
 				batchResponses = this.client.executeBatch(batchRequests);
 			} catch(FacebookOAuthException fe) {
-				writeLog("Error: Failed to execute Facebook batch request (OAuth).  Getting new access token and retrying...");
+				writeLog("Error: Failed to execute Facebook batch request (OAuth). Message: " + fe.getErrorMessage() + "... Getting new access token and retrying...");
 				initializeFacebookClient();
 				retries++;
 			} catch(FacebookException fe) {
 				try {
-					writeLog("Error: Failed to execute Facebook batch request.  Sleeping for a bit and then retrying...");
+					writeLog("Error: Failed to execute Facebook batch request. Message: " + fe.getMessage() + "...  Sleeping for a bit and then retrying...");
 					Thread.sleep(FacebookScraper.ERROR_SLEEP_MILLIS);
 					retries++;
 				} catch (Exception e) {
