@@ -65,20 +65,24 @@ public class FacebookScraper {
 		private PageRequestType type;
 		private int limit;
 		private long until;
+		private String __paging_token;
+		private String after;
 		
 		public PageRequest() {
-			this(null, null, -1, -1);
+			this(null, null, -1, -1, null, null);
 		}
 		
 		public PageRequest(String pageId, PageRequestType type) {
-			this(pageId, type, -1, -1);
+			this(pageId, type, -1, -1, null, null);
 		}
 		
-		public PageRequest(String pageId, PageRequestType type, int limit, long until) {
+		public PageRequest(String pageId, PageRequestType type, int limit, long until, String __paging_token, String after) {
 			this.pageId = pageId;
 			this.type = type;
 			this.limit = limit;
 			this.until = until;
+			this.__paging_token = __paging_token;
+			this.after = after;
 		}
 		
 		public String getPageId() {
@@ -95,6 +99,14 @@ public class FacebookScraper {
 		
 		public long getUntil() {
 			return this.until;
+		}
+		
+		public String get__paging_token() {
+			return this.__paging_token;
+		}
+		
+		public String getAfter() {
+			return this.after;
 		}
 		
 		public boolean fromString(String requestStr) {
@@ -122,6 +134,8 @@ public class FacebookScraper {
 				String[] argAssignments = args.split("\\&");
 				int limit = -1;
 				long until = -1;
+				String __paging_token = null;
+				String after = null;
 				for (int i = 0; i < argAssignments.length; i++) {
 					if (!argAssignments[i].contains("="))
 						continue;
@@ -130,12 +144,18 @@ public class FacebookScraper {
 						limit = Integer.parseInt(assignmentParts[1]);
 					else if (assignmentParts[0].equals("until"))
 						until = Integer.parseInt(assignmentParts[1]);
+					else if (assignmentParts[0].equals("__paging_token"))
+						__paging_token = assignmentParts[1];
+					else if (assignmentParts[0].equals("after"))
+						after = assignmentParts[1];
 				}
 				
 				this.pageId = pageId;
 				this.type = type;
 				this.limit = limit;
 				this.until = until;
+				this.__paging_token = __paging_token;
+				this.after = after;
 				
 				return true;
 			} catch (Exception e) {
@@ -156,13 +176,35 @@ public class FacebookScraper {
 			else if (this.type == PageRequestType.FEED)
 				str = str.append("/feed");
 			
-			if (this.limit < 0 || this.until < 0)
-				return str.toString();
+			boolean firstArg = false;
+			if (this.limit >= 0) {
+				str = str.append("?limit=").append(this.limit);
+				firstArg = true;
+			}
 			
-			str = str.append("?limit=")
-					 .append(this.limit)
-					 .append("&until=")
-					 .append(this.until);
+			if (this.until >= 0) {
+				if (firstArg)
+					str = str.append("?until=").append(this.until);
+				else
+					str = str.append("&until=").append(this.until);
+				firstArg = true;
+			}
+			
+			if (this.__paging_token != null) {
+				if (firstArg)
+					str = str.append("?__paging_token=").append(this.__paging_token);
+				else
+					str = str.append("&__paging_token=").append(this.__paging_token);
+				firstArg = true;
+			}
+			
+			if (this.after != null) {
+				if (firstArg)
+					str = str.append("?after=").append(this.after);
+				else
+					str = str.append("&after=").append(this.after);
+				firstArg = true;
+			}
 			
 			return str.toString();
 		}
@@ -184,6 +226,8 @@ public class FacebookScraper {
 			fullObj.put("type", this.sourceRequest.getType());
 			fullObj.put("limit", this.sourceRequest.getLimit());
 			fullObj.put("until", this.sourceRequest.getUntil());
+			fullObj.put("__paging_token", this.sourceRequest.get__paging_token());
+			fullObj.put("after", this.sourceRequest.getAfter());
 			fullObj.put("response", this.response);
 			return fullObj.toString();
 		}
