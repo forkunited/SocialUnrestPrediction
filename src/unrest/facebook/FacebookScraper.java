@@ -542,9 +542,9 @@ public class FacebookScraper {
 				) { 
 					writeLog("Error: Facebook request failed (OAuth).  Getting new access token and retrying...");
 					initializeFacebookClient();
-				} else if (errorCode == 1	// API Unknown
+				} else if (/*errorCode == 1	// API Unknown
 						|| errorCode == 2	// API Service
-						|| errorCode == 4	// API Too Many Calls
+						|| */errorCode == 4	// API Too Many Calls
 						|| errorCode == 17  // API User Too Many Calls
 						|| errorCode == 613 // FQL Rate limit exceeded
 				) {
