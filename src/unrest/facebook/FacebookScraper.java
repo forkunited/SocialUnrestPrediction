@@ -184,25 +184,25 @@ public class FacebookScraper {
 			
 			if (this.until >= 0) {
 				if (firstArg)
-					str = str.append("?until=").append(this.until);
-				else
 					str = str.append("&until=").append(this.until);
+				else
+					str = str.append("?until=").append(this.until);
 				firstArg = true;
 			}
 			
 			if (this.__paging_token != null) {
 				if (firstArg)
-					str = str.append("?__paging_token=").append(this.__paging_token);
-				else
 					str = str.append("&__paging_token=").append(this.__paging_token);
+				else
+					str = str.append("?__paging_token=").append(this.__paging_token);
 				firstArg = true;
 			}
 			
 			if (this.after != null) {
 				if (firstArg)
-					str = str.append("?after=").append(this.after);
-				else
 					str = str.append("&after=").append(this.after);
+				else
+					str = str.append("?after=").append(this.after);
 				firstArg = true;
 			}
 			
