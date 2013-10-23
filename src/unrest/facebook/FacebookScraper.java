@@ -473,7 +473,10 @@ public class FacebookScraper {
 		
 		for (int i = 0; i < batchResponses.size(); i++) {
 			BatchResponse response = batchResponses.get(i);
-			if (response.getCode() == 200) {
+			if (response == null) {
+				writeLog("Error: Missing Facebook response for request " + batchRequests[i].getRelativeUrl() + ".  Skipping...");
+				continue;
+			} else if (response.getCode() == 200) {
 				responses[i] = response.getBody();
 			} else {
 				// TODO Make constants for these later if used anywhere else
