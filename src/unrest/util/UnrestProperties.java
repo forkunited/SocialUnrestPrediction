@@ -11,6 +11,7 @@ public class UnrestProperties {
 	private String facebookAppID;
 	private String facebookAppSecret;
 	private String facebookDataScrapeDirPath;
+	private int maxThreads;
 	
 	public UnrestProperties() {
 		this(FileUtil.getPropertiesReader());
@@ -29,6 +30,7 @@ public class UnrestProperties {
 			this.facebookAppID = loadProperty(env, properties, "facebookAppID");
 			this.facebookAppSecret = loadProperty(env, properties, "facebookAppSecret");
 			this.facebookDataScrapeDirPath = loadProperty(env, properties, "facebookDataScrapeDirPath");
+			this.maxThreads = Integer.parseInt(loadProperty(env, properties, "maxThreads"));
 			
 			propertiesReader.close();
 		} catch (Exception e) {
@@ -61,5 +63,9 @@ public class UnrestProperties {
 	
 	public String getFacebookDataScrapeDirPath() {
 		return this.facebookDataScrapeDirPath;
+	}
+	
+	public int getMaxThreads() {
+		return this.maxThreads;
 	}
 }

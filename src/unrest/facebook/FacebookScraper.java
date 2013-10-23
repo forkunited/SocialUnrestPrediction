@@ -10,13 +10,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.restfb.DefaultFacebookClient;
 import com.restfb.FacebookClient;
@@ -27,6 +27,7 @@ import com.restfb.exception.FacebookException;
 import com.restfb.exception.FacebookOAuthException;
 import com.restfb.json.JsonArray;
 import com.restfb.json.JsonObject;
+
 
 import unrest.util.UnrestProperties;
 
@@ -47,82 +48,279 @@ import unrest.util.UnrestProperties;
 public class FacebookScraper {
 	private static CharSequence FACEBOOK_IGNORE_URL = "https://graph.facebook.com/";
 	private static SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static int MAX_PAGE_QUERIES_PER_ITERATION = 12;
+	private static int MAX_PAGE_REQUESTS_PER_ITERATION = 100; // Each query has 4 facebook requests
 	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 50;
 	private static int MAX_ERROR_RETRIES = 5;
-	private static int ERROR_SLEEP_MILLIS = 1000*60*10; // 10 min
+	private static int ERROR_SLEEP_MILLIS = 1000*60*4; // 4 min
+	
+	public enum PageRequestType {
+		MAIN,
+		FEED,
+		LIKES,
+		EVENTS
+	}
+	
+	public class PageRequest {
+		private String pageId;
+		private PageRequestType type;
+		private int limit;
+		private long until;
+		
+		public PageRequest() {
+			this(null, null, -1, -1);
+		}
+		
+		public PageRequest(String pageId, PageRequestType type) {
+			this(pageId, type, -1, -1);
+		}
+		
+		public PageRequest(String pageId, PageRequestType type, int limit, long until) {
+			this.pageId = pageId;
+			this.type = type;
+			this.limit = limit;
+			this.until = until;
+		}
+		
+		public String getPageId() {
+			return this.pageId;
+		}
+		
+		public PageRequestType getType() {
+			return this.type;
+		}
+		
+		public int getLimit() {
+			return this.limit;
+		}
+		
+		public long getUntil() {
+			return this.until;
+		}
+		
+		public boolean fromString(String requestStr) {
+			try {
+				requestStr = requestStr.replace(FACEBOOK_IGNORE_URL, "");
+				
+				if (requestStr.indexOf("/") < 0) {
+					this.pageId = requestStr;
+					this.type = PageRequestType.MAIN;
+					return true;
+				}
+				
+				String[] requestStrParts = requestStr.split("/");
+				String pageId = requestStrParts[0];
+				String typeAndArgs = requestStrParts[1];
+				if (!typeAndArgs.contains("?")) {
+					this.pageId = pageId;
+					this.type = PageRequestType.valueOf(typeAndArgs.toUpperCase());
+					return true;
+				}
+				
+				String[] typeAndArgsParts = typeAndArgs.split("\\?");
+				PageRequestType type = PageRequestType.valueOf(typeAndArgsParts[0].toUpperCase());
+				String args = typeAndArgsParts[1];
+				String[] argAssignments = args.split("\\&");
+				int limit = -1;
+				long until = -1;
+				for (int i = 0; i < argAssignments.length; i++) {
+					if (!argAssignments[i].contains("="))
+						continue;
+					String[] assignmentParts = argAssignments[i].split("\\=");
+					if (assignmentParts[0].equals("limit"))
+						limit = Integer.parseInt(assignmentParts[1]);
+					else if (assignmentParts[0].equals("until"))
+						until = Integer.parseInt(assignmentParts[1]);
+				}
+				
+				this.pageId = pageId;
+				this.type = type;
+				this.limit = limit;
+				this.until = until;
+				
+				return true;
+			} catch (Exception e) {
+				writeLog("Failed to parse page request from string (" + requestStr + "): " + e.getMessage());
+				return false;
+			}
+		}
+		
+		public String toString() {
+			StringBuilder str = new StringBuilder();
+			str = str.append(this.pageId);
+			if (this.type == PageRequestType.MAIN)
+				return str.toString();
+			else if (this.type == PageRequestType.EVENTS)
+				str = str.append("/events");
+			else if (this.type == PageRequestType.LIKES)
+				str = str.append("/likes");
+			else if (this.type == PageRequestType.FEED)
+				str = str.append("/feed");
+			
+			if (this.limit < 0 || this.until < 0)
+				return str.toString();
+			
+			str = str.append("?limit=")
+					 .append(this.limit)
+					 .append("&until=")
+					 .append(this.until);
+			
+			return str.toString();
+		}
+	}
+	
+	public class PageResponse {
+		private JsonObject response;
+		private PageRequest sourceRequest;
+		
+		public PageResponse(PageRequest sourceRequest, JsonObject response) {
+			this.sourceRequest = sourceRequest;
+			this.response = response;
+		}
+		
+		public String toString() {
+			JsonObject fullObj = new JsonObject();
+			fullObj.put("request", this.sourceRequest.toString());
+			fullObj.put("id", this.sourceRequest.getPageId());
+			fullObj.put("type", this.sourceRequest.getType());
+			fullObj.put("limit", this.sourceRequest.getLimit());
+			fullObj.put("until", this.sourceRequest.getUntil());
+			fullObj.put("response", this.response);
+			return fullObj.toString();
+		}
+		
+		public JsonObject getResponse() {
+			return this.response;
+		}
+		
+		public PageRequest getSourceRequest() {
+			return this.sourceRequest;
+		}
+	
+		public PageRequest getNextPageRequest() {
+			if (this.response.has("paging") && this.response.getJsonObject("paging").has("next")) {
+				String nextRequestStr = this.response.getJsonObject("paging").getString("next");
+				PageRequest nextRequest = new PageRequest();
+				if (nextRequest.fromString(nextRequestStr))
+					return nextRequest;
+				else
+					return null;
+			} else {
+				return null;
+			}
+		}
+		
+		public Set<String> getRelatedPageIds() {
+			Set<String> likedPageIds = new HashSet<String>();
+			if (this.sourceRequest.getType() != PageRequestType.LIKES)
+				return likedPageIds;
+			
+			if (!this.response.has("data")) {
+				writeLog("'Likes' response for " + this.sourceRequest.toString() + " missing data. Skipping...");
+				return likedPageIds;
+			}
+			
+			JsonArray likes = this.response.getJsonArray("data");
+			for (int i = 0; i < likes.length(); i++) {
+				JsonObject like = likes.getJsonObject(i);
+				if (!like.has("id")) {
+					writeLog("Page data like from request " + this.sourceRequest.toString() + " is missing id... Skipping...");
+					continue;
+				}
+				likedPageIds.add(like.getString("id"));
+			}
+			
+			return likedPageIds;
+		}
+	}
 	
 	private UnrestProperties properties;
 	private File logFile;
 	private File seedPageUrlsFile;
-	private File currentPageIdsFile;
+	private File currentRequestsFile;
 	private File visitedPageIdsFile;
 	private File pageDataDir;
 	private File currentIterationFile;
 	
+	private int maxThreads;
+	
 	private FacebookClient client;
-	
-	
+
 	public FacebookScraper() {
 		this.properties = new UnrestProperties();
 		this.logFile = new File(this.properties.getFacebookDataScrapeDirPath(), "Log");
 		this.seedPageUrlsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "SeedPageUrls");
-		this.currentPageIdsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "CurrentPageIds");
+		this.currentRequestsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "CurrentRequests");
 		this.visitedPageIdsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "VisitedPageIds");
 		this.pageDataDir = new File(this.properties.getFacebookDataScrapeDirPath(), "PageData");
 		this.currentIterationFile = new File(this.properties.getFacebookDataScrapeDirPath(), "CurrentIteration");
+		this.maxThreads = this.properties.getMaxThreads();
 	}
 	
 	public void run() {
-		run(-1);
+		run(1);
 	}
 	
 	public void run(int iterations) {
 		writeLog("Initializing...");
 		
 		initializeFacebookClient();
-		Set<String> currentPageIds = loadPageIds(this.currentPageIdsFile);
-		if (currentPageIds == null)
-			currentPageIds = retrieveSeedPageIds();
+		LinkedList<PageRequest> currentRequests = loadPageRequests(this.currentRequestsFile);
+		if (currentRequests == null)
+			currentRequests = retrieveSeedRequests();
 		Set<String> visitedPageIds = loadPageIds(this.visitedPageIdsFile);
 		if (visitedPageIds == null)
 			visitedPageIds = new HashSet<String>();
+
+		for (PageRequest request : currentRequests)
+			visitedPageIds.add(request.getPageId());
 		
-		Queue<String> pageIdsToQuery = new LinkedList<String>();
-		pageIdsToQuery.addAll(currentPageIds);
 		int currentIteration = loadCurrentIteration();
-		for (int i = 0; i < iterations; i++) {
-			if (pageIdsToQuery.size() == 0) {
-				writeLog("No page ids to query... exiting.");
+		int maxIteration = currentIteration + iterations;
+		while (currentIteration < maxIteration) {
+			if (currentRequests.size() == 0) {
+				writeLog("No outstanding requests... exiting.");
 				break;
 			}
 			
-			Set<String> currentIterationPageIds = new HashSet<String>();
-			while (currentIterationPageIds.size() < FacebookScraper.MAX_PAGE_QUERIES_PER_ITERATION && pageIdsToQuery.size() > 0)
-				currentIterationPageIds.add(pageIdsToQuery.remove());
+			List<PageRequest> currentIterationRequests = new ArrayList<PageRequest>();
+			while (currentIterationRequests.size() < FacebookScraper.MAX_PAGE_REQUESTS_PER_ITERATION && currentRequests.size() > 0)
+				currentIterationRequests.add(currentRequests.removeFirst());
 			
-			List<JsonObject> pageData = retrievePageData(currentIterationPageIds);
-			Set<String> likedPageIds = getLikedPageIds(pageData);
+			List<PageResponse> pageResponses = sendPageRequests(currentIterationRequests);
+			for (PageResponse pageResponse : pageResponses) {
+				Set<String> relatedPageIds = pageResponse.getRelatedPageIds();
+				for (String relatedPageId : relatedPageIds) {
+					if (!visitedPageIds.contains(relatedPageId)) {
+						writeLog("Adding requests for 'liked' page to queue: " + relatedPageId);
+						
+						currentRequests.addLast(new PageRequest(relatedPageId, PageRequestType.MAIN));
+						currentRequests.addLast(new PageRequest(relatedPageId, PageRequestType.FEED));
+						currentRequests.addLast(new PageRequest(relatedPageId, PageRequestType.LIKES));
+						currentRequests.addLast(new PageRequest(relatedPageId, PageRequestType.EVENTS));
+						visitedPageIds.add(relatedPageId);
+					}
+				}
+				
+				PageRequest nextPageRequest = pageResponse.getNextPageRequest();
+				if (nextPageRequest != null) {
+					writeLog("Adding next page request to queue: " + nextPageRequest);
+					currentRequests.addFirst(nextPageRequest);
+				}
+			}
 			
-			for (String likedPageId : likedPageIds)
-				if (!visitedPageIds.contains(likedPageId) && !pageIdsToQuery.contains(likedPageId))
-					pageIdsToQuery.add(likedPageId);
 			
-			for (String pageId : currentIterationPageIds)
-				visitedPageIds.add(pageId);
+			if (!savePageResponseData(pageResponses, currentIteration)) {
+				writeLog("Error: Failed to output page response data for iteration " + currentIteration);
+				System.exit(0);
+			}
 			
-			if (!savePageData(pageData, i + currentIteration)) {
-				writeLog("Error: Failed to output page data for iteration " + currentIteration);
+			if (!savePageRequests(this.currentRequestsFile, currentRequests)) {
+				writeLog("Error: Failed to output current requests for iteration");
 				System.exit(0);
 			}
 			
 			if (!savePageIds(this.visitedPageIdsFile, visitedPageIds)) {
 				writeLog("Error: Failed to output visited page ids for iteration " + currentIteration);
-				System.exit(0);
-			}
-			
-			if (!savePageIds(this.currentPageIdsFile, new HashSet<String>(pageIdsToQuery))) {
-				writeLog("Error: Failed to output current page ids for iteration");
 				System.exit(0);
 			}
 			
@@ -134,87 +332,28 @@ public class FacebookScraper {
 		}
 	}
 	
-	private Set<String> getLikedPageIds(List<JsonObject> pageData) {
-		writeLog("Getting liked page ids from page data...");
-		Set<String> pageIds = new HashSet<String>();
-		for (JsonObject pageDatum : pageData) {
-			if (!pageDatum.has("likes") || !pageDatum.getJsonObject("likes").has("data")) {
-				if (pageDatum.has("main"))
-					writeLog("Page data is missing likes (" + pageDatum.getJsonObject("main").getString("id") + ").  Skipping...");
-				else
-					writeLog("Page data is missing likes and main... Skipping...");
-				continue;
-			}
-			JsonArray likes = pageDatum.getJsonObject("likes").getJsonArray("data");
-			for (int i = 0; i < likes.length(); i++) {
-				JsonObject like = likes.getJsonObject(i);
-				if (!like.has("id")) {
-					if (pageDatum.has("main"))
-						writeLog("Page data like is missing id (" + pageDatum.getJsonObject("main").getString("id") + "). Skipping...");
-					else
-						writeLog("Page data like is missing id and main... Skipping...");
-					continue;
-				}
-				pageIds.add(like.getString("id"));
-			}
-		}
-		return pageIds;
-	}
 	
-	private List<JsonObject> retrievePageData(Set<String> pageIds) {
-		writeLog("Retrieving page data...");
-		String[] pageDataRequests = new String[pageIds.size()*4];
-		int i = 0;
-		for (String pageId : pageIds) {
-			pageDataRequests[i++] = pageId;
-			pageDataRequests[i++] = pageId + "/likes";
-			pageDataRequests[i++] = pageId + "/feed";
-			pageDataRequests[i++] = pageId + "/events";
+	private List<PageResponse> sendPageRequests(List<PageRequest> requests) {
+		writeLog("Setting up requests...");
+		List<PageResponse> responses = new ArrayList<PageResponse>();
+		String[] requestStrs = new String[requests.size()];
+		for (int i = 0; i < requests.size(); i++) {
+			requestStrs[i] = requests.get(i).toString();
 		}
 		
-		Map<String, JsonObject> pageData = new HashMap<String, JsonObject>();
-		String[] pageDataResponses = executeFacebookRequests(pageDataRequests);
-		for (i = 0; i < pageDataResponses.length; i++) {
-			if (pageDataResponses[i] == null)
+		String[] responseStrs = executeFacebookRequests(requestStrs);
+		for (int i = 0; i < responseStrs.length; i++) {
+			if (responseStrs[i] == null)
 				continue;
-			if (pageDataRequests[i].contains("/")) {
-				String[] requestParts = pageDataRequests[i].split("/");
-				String pageId = requestParts[0];
-				String requestType = requestParts[1];
-				if (!pageData.containsKey(pageId))
-					pageData.put(pageId, new JsonObject());
-
-				List<JsonObject> pages = new ArrayList<JsonObject>();
-				JsonObject currentPage = new JsonObject(pageDataResponses[i]);
-				pages.add(currentPage);
-				
-				while (currentPage.has("paging") && currentPage.getJsonObject("paging").has("next")) {
-					writeLog("Retrieving more pages for " + pageDataRequests[i] + "...");
-					String nextRequest = currentPage.getJsonObject("paging")
-													.getString("next")
-													.replace(FacebookScraper.FACEBOOK_IGNORE_URL, "");
-					String[] nextResponse = executeFacebookRequests(new String[] {nextRequest});
-					if (nextResponse[0] == null)
-						break;
-					currentPage = new JsonObject(nextResponse[0]);
-					pages.add(currentPage);
-				}
-				
-				JsonArray pageArray = new JsonArray(pages);
-				pageData.get(pageId).put(requestType, pageArray);
-				
-			} else {
-				String pageId = pageDataRequests[i];
-				if (!pageData.containsKey(pageId))
-					pageData.put(pageId, new JsonObject());
-				pageData.get(pageId).put("main", new JsonObject(pageDataResponses[i]));
-			}
+			responses.add(new PageResponse(requests.get(i), new JsonObject(responseStrs[i])));
 		}
 		
-		return new ArrayList<JsonObject>(pageData.values());
+		writeLog("Finished requests.");
+		
+		return responses;
 	}
 	
-	private Set<String> retrieveSeedPageIds() {
+	private LinkedList<PageRequest> retrieveSeedRequests() {
 		Set<String> seedPageUrlSet = loadSeedPageUrls();
 		String[] seedPageUrls = new String[seedPageUrlSet.size()];
 		int i = 0;
@@ -223,10 +362,10 @@ public class FacebookScraper {
 			i++;
 		}
 		
-		writeLog("Retrieving seed page ids for " + seedPageUrls.length + " pages...");
+		writeLog("Retrieving seed page requests for " + seedPageUrls.length + " pages...");
 		
 		String[] seedPageData = executeFacebookRequests(seedPageUrls);
-		Set<String> pageIds = new HashSet<String>();
+		LinkedList<PageRequest> pageRequests = new LinkedList<PageRequest>();
 		for (String seedPageDatum : seedPageData) {
 			if (seedPageDatum == null)
 				continue;
@@ -234,33 +373,67 @@ public class FacebookScraper {
 			if (!pageObj.has("id"))
 				continue;
 			String pageId = pageObj.getString("id");
-			if (!pageId.contains("/"))
-				pageIds.add(pageId);
+			if (!pageId.contains("/")) {
+				pageRequests.add(new PageRequest(pageId, PageRequestType.MAIN));
+				pageRequests.add(new PageRequest(pageId, PageRequestType.FEED));
+				pageRequests.add(new PageRequest(pageId, PageRequestType.LIKES));
+				pageRequests.add(new PageRequest(pageId, PageRequestType.EVENTS));
+			}
 		}
-		writeLog("Retrieved " + pageIds.size() + " pages.");
-		return pageIds;
+		writeLog("Retrieved " + pageRequests.size() + " seed page requests.");
+		return pageRequests;
+	}
+	
+	private class FacebookPartialRequestsThread implements Runnable {
+		private String[] requests;
+		private String[] responses;
+		private int firstRequest;
+		private int numRequests;
+		
+		public FacebookPartialRequestsThread(String[] requests, String[] responses, int firstRequest, int numRequests) {
+			this.requests = requests;
+			this.responses = responses;
+			this.firstRequest = firstRequest;
+			this.numRequests = numRequests;
+		}
+		
+		@Override
+		public void run() {
+			try {
+				String[] partialRequests = new String[this.numRequests];
+				for (int i = this.firstRequest; i < this.firstRequest + this.numRequests; i++) {
+					partialRequests[i - this.firstRequest] = this.requests[i];
+				}
+				
+				String[] partialResponses = executeFacebookRequests(partialRequests);
+				for (int i = this.firstRequest; i < this.firstRequest + this.numRequests; i++) {
+					this.responses[i] = partialResponses[i - this.firstRequest];
+				}
+			} catch (OutOfMemoryError e) {
+				writeLog("ERROR: Out of memory while processing requests...");
+				System.exit(0);
+			}
+		}
 	}
 	
 	private String[] executeFacebookRequests(String[] requests) {
-		writeLog("Executing Facebook requests...");
-		
 		if (requests.length > FacebookScraper.MAX_FACEBOOK_REQUESTS_PER_BATCH) {
+			ExecutorService threadPool = Executors.newFixedThreadPool(this.maxThreads);
 			String[] responses = new String[requests.length];
 			int totalRequested = 0;
 			while (totalRequested < requests.length) {
 				int toRequest = Math.min(totalRequested+FacebookScraper.MAX_FACEBOOK_REQUESTS_PER_BATCH, requests.length) - totalRequested;
-				String[] partialRequests = new String[toRequest];
-				for (int i = totalRequested; i < totalRequested + toRequest; i++) {
-					partialRequests[i - totalRequested] = requests[i];
-				}
-				
-				String[] partialResponses = executeFacebookRequests(partialRequests);
-				for (int i = totalRequested; i < totalRequested + toRequest; i++) {
-					responses[i] = partialResponses[i - totalRequested];
-				}
-				
+				threadPool.submit(new FacebookPartialRequestsThread(requests, responses, totalRequested, toRequest));
 				totalRequested += toRequest;
 			}
+			
+			try {
+				threadPool.shutdown();
+				threadPool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			
 			
 			return responses;
 		}
@@ -268,6 +441,7 @@ public class FacebookScraper {
 		String[] responses = new String[requests.length];
 		BatchRequest[] batchRequests = new BatchRequest[requests.length];
 		for (int i = 0; i < batchRequests.length; i++) {
+			writeLog("Executing Facebook request: " + requests[i]);
 			batchRequests[i] = new BatchRequest.BatchRequestBuilder(requests[i]).build();
 		}
 
@@ -304,9 +478,15 @@ public class FacebookScraper {
 			} else {
 				// TODO Make constants for these later if used anywhere else
 				// See: https://developers.facebook.com/docs/reference/api/errors/
-				JsonObject errorObj = new JsonObject(response.getBody());
+				JsonObject responseBody = new JsonObject(response.getBody());
+				if (!responseBody.has("error")) {
+					writeLog("Error: Facebook request failed without error (" + responseBody.toString() + "). Skipping request " + batchRequests[i].getRelativeUrl());
+					continue;
+				}
+				
+				JsonObject errorObj = responseBody.getJsonObject("error");
 				if (!errorObj.has("code")) {
-					writeLog("Error: Facebook request failed with code-less error.  Skipping request " + batchRequests[i]);
+					writeLog("Error: Facebook request failed with code-less error (" + errorObj.toString() + ") (" + responseBody.toString() +").  Skipping request " + batchRequests[i].getRelativeUrl());
 					continue; // Skip	
 				}
 				int errorCode = errorObj.getInt("code");
@@ -328,7 +508,7 @@ public class FacebookScraper {
 						System.exit(0);
 					}
 				} else {
-					writeLog("Error: Facebook request failed for unknown reasons.  Skipping request " + batchRequests[i]);
+					writeLog("Error: Facebook request failed for unknown reasons.  Skipping request " + batchRequests[i].getRelativeUrl());
 					continue; // Skip it
 				}
 				
@@ -376,6 +556,35 @@ public class FacebookScraper {
 		}
 	}
 	
+	private LinkedList<PageRequest> loadPageRequests(File pageRequestsFile) {
+		writeLog("Loading page requests...");
+		try {
+			if (!pageRequestsFile.exists())
+				return null;
+			
+			BufferedReader br = new BufferedReader(new FileReader(pageRequestsFile));
+			String line = null;
+			LinkedList<PageRequest> pageRequests = new LinkedList<PageRequest>();
+			
+			while ((line = br.readLine()) != null) {
+				line = line.trim();
+				if (line.length() > 0) {
+					PageRequest request = new PageRequest();
+					if (request.fromString(line))
+						pageRequests.add(request);
+				}
+			}
+			
+			br.close();
+			
+			writeLog("Loaded " + pageRequests.size() + " page requests.");
+			return pageRequests;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	private Set<String> loadPageIds(File pageIdsFile) {
 		writeLog("Loading page ids...");
 		try {
@@ -416,13 +625,27 @@ public class FacebookScraper {
 	    } catch (IOException e) { e.printStackTrace(); return false; }
 	}
 	
-	private boolean savePageData(List<JsonObject> data, int iteration) {
-		writeLog("Saving page data for iteration " + iteration + "...");
+	private boolean savePageRequests(File pageRequestsFile, LinkedList<PageRequest> pageRequests) {
+		writeLog("Saving page requests to file " + pageRequestsFile.getName() + "...");
+		try {
+			BufferedWriter w = new BufferedWriter(new FileWriter(pageRequestsFile));
+			
+			for (PageRequest pageRequest : pageRequests) {
+				w.write(pageRequest.toString() + "\n");
+			}
+			
+			w.close();
+	        return true;
+	    } catch (IOException e) { e.printStackTrace(); return false; }
+	}
+	
+	private boolean savePageResponseData(List<PageResponse> data, int iteration) {
+		writeLog("Saving page response data for iteration " + iteration + "...");
 		try {
 			File pageDataFile = new File(this.pageDataDir.getAbsolutePath(), "facebookPageData_" + iteration);
 			BufferedWriter w = new BufferedWriter(new FileWriter(pageDataFile));
 			
-			for (JsonObject datum : data) {
+			for (PageResponse datum : data) {
 				w.write(datum.toString() + "\n");
 			}
 			
@@ -435,7 +658,7 @@ public class FacebookScraper {
 		writeLog("Saving current iteration (" + iteration + ")...");
 		try {
 			BufferedWriter w = new BufferedWriter(new FileWriter(this.currentIterationFile));
-			w.write(iteration);
+			w.write(iteration + "\n");
 			w.close();
 	        return true;
 	    } catch (IOException e) { e.printStackTrace(); return false; }
@@ -448,7 +671,7 @@ public class FacebookScraper {
 				return 0;
 			
 			BufferedReader br = new BufferedReader(new FileReader(this.currentIterationFile));
-			int currentIteration = Integer.parseInt(br.readLine());
+			int currentIteration = Integer.parseInt(br.readLine().trim());
 			br.close();
 			return currentIteration;
 		} catch (Exception e) {
@@ -457,7 +680,7 @@ public class FacebookScraper {
 		}
 	}
 	
-	private void writeLog(String log) {
+	private synchronized void writeLog(String log) {
 		try {
 			BufferedWriter w = new BufferedWriter(new FileWriter(this.logFile, true));
 			String logStr = LOG_DATE_FORMAT.format(Calendar.getInstance().getTime()) + "\t" + log;
