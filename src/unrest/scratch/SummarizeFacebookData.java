@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
+import unrest.util.StringUtil;
 import unrest.util.UnrestProperties;
 
 import com.restfb.json.JsonArray;
@@ -131,6 +132,7 @@ public class SummarizeFacebookData {
 		SummarizeFacebookData summarize = new SummarizeFacebookData();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
 		Calendar date = Calendar.getInstance();
+		StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
 		
 		File inputDir = new File(properties.getFacebookDataScrapeDirPath(), "PageData");
 		File[] dataFiles = inputDir.listFiles();
@@ -170,7 +172,7 @@ public class SummarizeFacebookData {
 						String createdTime = post.getString("created_time");
 						try {
 							date.setTime(dateFormat.parse(createdTime));
-							Detector.Prediction prediction = unrestDetector.getPrediction(message, date);
+							Detector.Prediction prediction = unrestDetector.getPrediction(cleanFn.transform(message), date);
 							if (prediction != null) {
 								summary.incrementUnrestDetectedCount();
 								summary.setExampleUnrest(post.getString("id"));
