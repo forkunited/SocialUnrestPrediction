@@ -546,6 +546,7 @@ public class FacebookScraper {
 						|| errorCode == 2	// API Service
 						|| errorCode == 4	// API Too Many Calls
 						|| errorCode == 17  // API User Too Many Calls
+						|| errorCode == 613 // FQL Rate limit exceeded
 				) {
 					try {
 						writeLog("Error: Facebook request failed. Waiting a bit and then retrying...");
