@@ -555,7 +555,7 @@ public class FacebookScraper {
 						System.exit(0);
 					}
 				} else {
-					writeLog("Error: Facebook request failed for unknown reasons.  Skipping request " + batchRequests[i].getRelativeUrl());
+					writeLog("Error: Facebook request failed for unknown reasons (Code: " + errorCode + ").  Skipping request " + batchRequests[i].getRelativeUrl());
 					continue; // Skip it
 				}
 				
