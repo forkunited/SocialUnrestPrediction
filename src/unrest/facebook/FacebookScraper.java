@@ -131,7 +131,7 @@ public class FacebookScraper {
 				String[] typeAndArgsParts = typeAndArgs.split("\\?");
 				PageRequestType type = PageRequestType.valueOf(typeAndArgsParts[0].toUpperCase());
 				String args = typeAndArgsParts[1];
-				String[] argAssignments = args.split("\\&");
+				String[] argAssignments = args.split("\\&|\\%3F");
 				int limit = -1;
 				long until = -1;
 				String __paging_token = null;
@@ -139,7 +139,7 @@ public class FacebookScraper {
 				for (int i = 0; i < argAssignments.length; i++) {
 					if (!argAssignments[i].contains("="))
 						continue;
-					String[] assignmentParts = argAssignments[i].split("\\=");
+					String[] assignmentParts = argAssignments[i].split("\\=|\\%3D");
 					if (assignmentParts[0].equals("limit"))
 						limit = Integer.parseInt(assignmentParts[1]);
 					else if (assignmentParts[0].equals("until"))
