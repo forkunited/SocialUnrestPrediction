@@ -189,7 +189,7 @@ public class SummarizeFacebookData {
 						summary.setExampleLike(like.getString("id"));
 					}
 				} else if (type.equals("EVENTS")) {
-					JsonArray events = response.getJsonArray("events");
+					JsonArray events = response.getJsonArray("data");
 					for (int i = 0; i < events.length(); i++) {
 						JsonObject event = events.getJsonObject(i);
 						if (!event.has("id"))
