@@ -210,7 +210,7 @@ public class SummarizeFacebookData {
 			w.write("Id\tName\tCategory\tPosts\tEvents\tLikes\tUnrest\tEx. Post\tEx. Event\tEx. Like\tEx. Unrest\n");
 			
 			for (Entry<String, FacebookPageSummary> entry : summaries.entrySet()) {
-				String summaryStr = entry.toString();
+				String summaryStr = entry.getValue().toString();
 				w.write(summaryStr + "\n");
 				System.out.println(summaryStr);
 			}
