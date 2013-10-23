@@ -163,7 +163,7 @@ public class SummarizeFacebookData {
 						String message = post.getString("message");
 						
 						summary.incrementPostCount();
-						summary.setExamplePost(message);
+						summary.setExamplePost(post.getString("id"));
 						
 						if (!post.has("created_time"))
 							continue;
@@ -173,7 +173,7 @@ public class SummarizeFacebookData {
 							Detector.Prediction prediction = unrestDetector.getPrediction(message, date);
 							if (prediction != null) {
 								summary.incrementUnrestDetectedCount();
-								summary.setExampleUnrest(message);
+								summary.setExampleUnrest(post.getString("id"));
 							}
 						} catch (Exception e) {
 							
