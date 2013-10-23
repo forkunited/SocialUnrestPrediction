@@ -124,7 +124,6 @@ public class SummarizeFacebookData {
 	}
 	
 	public static void main(String[] args) {
-		List<JsonObject> data = readData();
 		Map<String, FacebookPageSummary> summaries = new HashMap<String, FacebookPageSummary>();
 		DetectorBBN unrestDetector = new DetectorBBN();
 		UnrestProperties properties = new UnrestProperties();
@@ -133,64 +132,71 @@ public class SummarizeFacebookData {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
 		Calendar date = Calendar.getInstance();
 		
-		for (JsonObject datum : data) {
-			String id = datum.getString("id");
-			String type = datum.getString("type");
-			JsonObject response = datum.getJsonObject("response");
-			if (!summaries.containsKey(id))
-				summaries.put(id, summarize.new FacebookPageSummary(id));
-			FacebookPageSummary summary = summaries.get(id);
-			
-			if (type.equals("MAIN")) {
-				String name = "", category = "";
-				if (response.has("name"))
-					name = response.getString("name");
-				if (response.has("category"))
-					category = response.getString("category");
-				summary.setName(name);
-				summary.setCategory(category);
-			} else if (type.equals("FEED")) {
-				JsonArray posts = response.getJsonArray("data");
-				for (int i = 0; i < posts.length(); i++) {
-					JsonObject post = posts.getJsonObject(i);
-					if (!post.has("message"))
-						continue;
-					String message = post.getString("message");
-					
-					summary.incrementPostCount();
-					summary.setExamplePost(message);
-					
-					if (!post.has("created_time"))
-						continue;
-					String createdTime = post.getString("created_time");
-					try {
-						date.setTime(dateFormat.parse(createdTime));
-						Detector.Prediction prediction = unrestDetector.getPrediction(message, date);
-						if (prediction != null) {
-							summary.incrementUnrestDetectedCount();
-							summary.setExampleUnrest(message);
-						}
-					} catch (Exception e) {
+		File inputDir = new File(properties.getFacebookDataScrapeDirPath(), "PageData");
+		File[] dataFiles = inputDir.listFiles();
+		for (File dataFile : dataFiles) {
+			List<JsonObject> data = readData(dataFile);
+			if (data == null)
+				continue;
+			for (JsonObject datum : data) {
+				String id = datum.getString("id");
+				String type = datum.getString("type");
+				JsonObject response = datum.getJsonObject("response");
+				if (!summaries.containsKey(id))
+					summaries.put(id, summarize.new FacebookPageSummary(id));
+				FacebookPageSummary summary = summaries.get(id);
+				
+				if (type.equals("MAIN")) {
+					String name = "", category = "";
+					if (response.has("name"))
+						name = response.getString("name");
+					if (response.has("category"))
+						category = response.getString("category");
+					summary.setName(name);
+					summary.setCategory(category);
+				} else if (type.equals("FEED")) {
+					JsonArray posts = response.getJsonArray("data");
+					for (int i = 0; i < posts.length(); i++) {
+						JsonObject post = posts.getJsonObject(i);
+						if (!post.has("message"))
+							continue;
+						String message = post.getString("message");
 						
-					}	
-				}
-			} else if (type.equals("LIKES")) {
-				JsonArray likes = response.getJsonArray("data");
-				for (int i = 0; i < likes.length(); i++) {
-					JsonObject like = likes.getJsonObject(i);
-					if (!like.has("id"))
-						continue;
-					summary.incrementLikeCount();
-					summary.setExampleLike(like.getString("id"));
-				}
-			} else if (type.equals("EVENTS")) {
-				JsonArray events = response.getJsonArray("events");
-				for (int i = 0; i < events.length(); i++) {
-					JsonObject event = events.getJsonObject(i);
-					if (!event.has("id"))
-						continue;
-					summary.incrementEventCount();
-					summary.setExampleEvent(event.getString("id"));
+						summary.incrementPostCount();
+						summary.setExamplePost(message);
+						
+						if (!post.has("created_time"))
+							continue;
+						String createdTime = post.getString("created_time");
+						try {
+							date.setTime(dateFormat.parse(createdTime));
+							Detector.Prediction prediction = unrestDetector.getPrediction(message, date);
+							if (prediction != null) {
+								summary.incrementUnrestDetectedCount();
+								summary.setExampleUnrest(message);
+							}
+						} catch (Exception e) {
+							
+						}	
+					}
+				} else if (type.equals("LIKES")) {
+					JsonArray likes = response.getJsonArray("data");
+					for (int i = 0; i < likes.length(); i++) {
+						JsonObject like = likes.getJsonObject(i);
+						if (!like.has("id"))
+							continue;
+						summary.incrementLikeCount();
+						summary.setExampleLike(like.getString("id"));
+					}
+				} else if (type.equals("EVENTS")) {
+					JsonArray events = response.getJsonArray("events");
+					for (int i = 0; i < events.length(); i++) {
+						JsonObject event = events.getJsonObject(i);
+						if (!event.has("id"))
+							continue;
+						summary.incrementEventCount();
+						summary.setExampleEvent(event.getString("id"));
+					}
 				}
 			}
 		}
@@ -214,29 +220,23 @@ public class SummarizeFacebookData {
 	    }
 	}
 	
-	public static List<JsonObject> readData() {
-		UnrestProperties properties = new UnrestProperties();
-		File inputDir = new File(properties.getFacebookDataScrapeDirPath(), "PageData");
+	public static List<JsonObject> readData(File dataFile) {
 		List<JsonObject> data = new ArrayList<JsonObject>();
-		File[] dataFiles = inputDir.listFiles();
 		
-		for (File dataFile : dataFiles) {
-			if (!dataFile.getName().contains("facebookPageData"))
-				continue;
-			try {
-				BufferedReader br = new BufferedReader(new FileReader(dataFile));
-				String line = null;
-				while ((line = br.readLine()) != null) {
-					line = line.trim();
-					JsonObject dataObj = new JsonObject(line);
-					data.add(dataObj);
-				}
-				br.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-				return null;
+		if (!dataFile.getName().contains("facebookPageData"))
+			return null;
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(dataFile));
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				line = line.trim();
+				JsonObject dataObj = new JsonObject(line);
+				data.add(dataObj);
 			}
-			
+			br.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 		
 		return data;
