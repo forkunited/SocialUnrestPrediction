@@ -126,9 +126,18 @@ public class JsonTweet {
 		}
 		
 		
-		
-		String dateString=(String)jsonObject.get("created_at");
-		id=(Long)jsonObject.get("id");
+		try {
+			id=(Long)jsonObject.get("id");
+		} catch (Exception e1) {
+			return null;
+		}
+			
+		String dateString = null;
+		try {
+			dateString=(String)jsonObject.get("created_at");
+		} catch (Exception e1) {
+			
+		}
 	
 		if (dateString == null) {
 			return null;
@@ -290,7 +299,7 @@ public class JsonTweet {
 	public static void setDf(SimpleDateFormat df) {
 		JsonTweet.df = df;
 	}
-	public double getId() {
+	public long getId() {
 		return id;
 	}
 	public void setId(long id) {
