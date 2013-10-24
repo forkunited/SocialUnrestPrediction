@@ -125,9 +125,8 @@ public class JsonTweet {
 			return null;
 		}
 		
-		
 		try {
-			id=(Long)jsonObject.get("id");
+			id=Long.parseLong(jsonObject.getString("id_str"));
 		} catch (Exception e1) {
 			return null;
 		}
