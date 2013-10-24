@@ -69,7 +69,7 @@ public class HBBNDetectUsersCount {
 				}
 
 			} catch (Exception e1) {
-				e1.printStackTrace();
+				
 			}
 		}
 	}
