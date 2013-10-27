@@ -518,8 +518,14 @@ public class FacebookScraper {
 		for (int i = 0; i < batchResponses.size(); i++) {
 			BatchResponse response = batchResponses.get(i);
 			if (response == null) {
-				writeLog("Error: Missing Facebook response for request " + batchRequests[i].getRelativeUrl() + ".  Skipping...");
-				continue;
+				writeLog("Error: Missing Facebook response for request " + batchRequests[i].getRelativeUrl() + ".  Retrying...");
+				
+				/// Try retrying instead of skipping...
+				String[] remainingRequests = Arrays.copyOfRange(requests, i, requests.length);
+				String[] remainingResponses = executeFacebookRequests(remainingRequests);
+				for (int j = i; j < responses.length; j++)
+					responses[j] = remainingResponses[j-i];
+				return responses;
 			} else if (response.getCode() == 200) {
 				responses[i] = response.getBody();
 			} else {

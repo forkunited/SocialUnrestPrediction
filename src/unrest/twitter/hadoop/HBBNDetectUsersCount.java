@@ -89,7 +89,7 @@ public class HBBNDetectUsersCount {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		@SuppressWarnings("deprecation")
-		Job job = new Job(conf, "HBBNDetectUsers");
+		Job job = new Job(conf, "HBBNDetectUsersCount");
 		job.setJarByClass(HBBNDetectUsers.class);
 		job.setMapperClass(BBNDetectUsersCountMapper.class);
 		job.setCombinerClass(BBNDetectUsersCountReducer.class);
@@ -98,8 +98,6 @@ public class HBBNDetectUsersCount {
 		job.setOutputValueClass(IntWritable.class);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
-		if (otherArgs.length >= 3)
-			job.setNumReduceTasks(Integer.parseInt(otherArgs[2]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }
