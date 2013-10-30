@@ -47,14 +47,18 @@ public abstract class Detector {
 			this.location = location;
 		}
 		
-		@Override
-		public String toString() {
+		public JSONObject toJSONObject() {
 			JSONObject json = new JSONObject();
 			json.put("text", this.sourceText);
 			json.put("minTime", dateFormat.format(this.minTime.getTime()));
 			json.put("maxTime", dateFormat.format(this.maxTime.getTime()));
 			json.put("location", this.location);
-			return json.toString();
+			return json;
+		}
+		
+		@Override
+		public String toString() {
+			return toJSONObject().toString();
 		}
 	}
 	

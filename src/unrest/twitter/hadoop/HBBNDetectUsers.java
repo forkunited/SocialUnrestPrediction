@@ -5,6 +5,8 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 
+import net.sf.json.JSONObject;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -26,7 +28,7 @@ public class HBBNDetectUsers {
 	
 	public static class BBNDetectUsersMapper extends Mapper<Object, Text, LongWritable, Text> {
 		private LongWritable userId = new LongWritable(0);
-		private Text predictionText = new Text();
+		private Text predictionData = new Text();
 		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
 		private DetectorBBN unrestDetector = new DetectorBBN();
 		private Calendar tweetDate = Calendar.getInstance();
@@ -62,10 +64,13 @@ public class HBBNDetectUsers {
 					this.tweetDate.setTime(tweet.getDate());
 					Detector.Prediction prediction = this.unrestDetector.getPrediction(tweetText, this.tweetDate);
 					if (prediction != null) {
+						JSONObject data = new JSONObject();
+						data.put("tweet", JSONObject.fromObject(line));
+						data.put("prediction", prediction.toJSONObject());
+						
 						this.userId.set(tweet.getUserId());
-						this.predictionText.set(prediction.toString());
-						context.write(this.userId, this.predictionText);
-					
+						this.predictionData.set(data.toString());
+						context.write(this.userId, this.predictionData);
 					}
 				}
 
