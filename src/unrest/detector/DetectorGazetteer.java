@@ -4,7 +4,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
 
-import unrest.data.Gazetteer;
+import ark.data.Gazetteer;
 
 public class DetectorGazetteer extends Detector {
 	private Set<String> gazetteerValues;

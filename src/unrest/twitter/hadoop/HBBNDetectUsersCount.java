@@ -21,7 +21,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
 import unrest.twitter.JsonTweet;
-import unrest.util.StringUtil;
+import ark.util.StringUtil;
 
 public class HBBNDetectUsersCount {
 	

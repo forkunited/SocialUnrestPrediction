@@ -16,7 +16,7 @@ import java.util.Map.Entry;
 
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
-import unrest.util.StringUtil;
+import ark.util.StringUtil;
 import unrest.util.UnrestProperties;
 
 import com.restfb.json.JsonArray;

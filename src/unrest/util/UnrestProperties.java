@@ -1,11 +1,8 @@
 package unrest.util;
 
-import java.io.Reader;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
+import ark.util.ARKProperties;
 
-public class UnrestProperties {
+public class UnrestProperties extends ARKProperties {
 	private String unrestTermGazetteerPath;
 	private String unrestLocationGazetteerPath;
 	private String facebookAppID;
@@ -14,35 +11,15 @@ public class UnrestProperties {
 	private int maxThreads;
 	
 	public UnrestProperties() {
-		this(FileUtil.getPropertiesReader());
-	}
-	
-	public UnrestProperties(Reader propertiesReader) {
-		try {
+		super(new String[] { "unrest.properties", "/user/wmcdowell/sloan/Projects/CorporateRelationDetection/corp.properties"});
 			
-			Properties properties = new Properties();
-			properties.load(propertiesReader);
+		this.unrestTermGazetteerPath = loadProperty("unrestTermGazetteerPath");
+		this.unrestLocationGazetteerPath = loadProperty("unrestLocationGazetteerPath");
+		this.facebookAppID = loadProperty("facebookAppID");
+		this.facebookAppSecret = loadProperty("facebookAppSecret");
+		this.facebookDataScrapeDirPath = loadProperty("facebookDataScrapeDirPath");
+		this.maxThreads = Integer.parseInt(loadProperty("maxThreads"));
 			
-			Map<String, String> env = System.getenv();
-			
-			this.unrestTermGazetteerPath = loadProperty(env, properties, "unrestTermGazetteerPath");
-			this.unrestLocationGazetteerPath = loadProperty(env, properties, "unrestLocationGazetteerPath");
-			this.facebookAppID = loadProperty(env, properties, "facebookAppID");
-			this.facebookAppSecret = loadProperty(env, properties, "facebookAppSecret");
-			this.facebookDataScrapeDirPath = loadProperty(env, properties, "facebookDataScrapeDirPath");
-			this.maxThreads = Integer.parseInt(loadProperty(env, properties, "maxThreads"));
-			
-			propertiesReader.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private String loadProperty(Map<String, String> env, Properties properties, String property) {
-		String propertyValue = properties.getProperty(property);
-		for (Entry<String, String> envEntry : env.entrySet())
-			propertyValue = propertyValue.replace("${" + envEntry.getKey() + "}", envEntry.getValue());
-		return propertyValue;
 	}
 	
 	public String getUnrestTermGazetteerPath() {

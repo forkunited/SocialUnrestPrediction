@@ -1,7 +1,7 @@
 package unrest.detector;
 
-import unrest.data.Gazetteer;
-import unrest.util.StringUtil;
+import ark.data.Gazetteer;
+import ark.util.StringUtil;
 import unrest.util.UnrestProperties;
 
 public class DetectorBBN extends DetectorConjunction {
