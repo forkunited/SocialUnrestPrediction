@@ -84,9 +84,11 @@ public class HBBNDetectUsers {
 		private Text fullText = new Text();
 		
 		public void reduce(LongWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+			this.fullText.clear();
+			
 			for (Text text : values) {
-				fullText.append(text.getBytes(), 0, text.getLength());
-				fullText.append("\t".getBytes(), 0, 1);
+				this.fullText.append(text.getBytes(), 0, text.getLength());
+				this.fullText.append("\t".getBytes(), 0, 1);
 			}
 			
 			context.write(key, this.fullText);
