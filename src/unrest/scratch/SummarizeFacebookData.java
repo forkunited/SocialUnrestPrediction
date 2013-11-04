@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
@@ -31,10 +32,12 @@ public class SummarizeFacebookData {
 		private int eventCount;
 		private int likeCount;
 		private int unrestDetectedCount;
+		private int unrestEventCount;
 		private String examplePost;
 		private String exampleLike;
 		private String exampleEvent;
 		private String exampleUnrest;
+		private String exampleUnrestEvent;
 		
 		public FacebookPageSummary(String id) {
 			this.id = id;
@@ -44,10 +47,12 @@ public class SummarizeFacebookData {
 			this.eventCount = 0;
 			this.likeCount = 0;
 			this.unrestDetectedCount = 0;
+			this.unrestEventCount = 0;
 			this.examplePost = "";
 			this.exampleLike = "";
 			this.exampleEvent = "";
 			this.exampleUnrest = "";
+			this.exampleUnrestEvent = "";
 		}
 		
 		public void setName(String name) {
@@ -74,6 +79,10 @@ public class SummarizeFacebookData {
 			this.unrestDetectedCount++;
 		}
 		
+		public void incrementUnrestEventCount() {
+			this.unrestEventCount++;
+		}
+		
 		public void setExamplePost(String post) {
 			this.examplePost = post;
 		}
@@ -88,6 +97,10 @@ public class SummarizeFacebookData {
 		
 		public void setExampleUnrest(String unrest) {
 			this.exampleUnrest = unrest;
+		}
+		
+		public void setExampleUnrestEvent(String unrestEvent) {
+			this.exampleUnrestEvent = unrestEvent;
 		}
 		
 		public String toString() {
@@ -107,6 +120,8 @@ public class SummarizeFacebookData {
 			str.append("\t");
 			str.append(this.unrestDetectedCount);
 			str.append("\t");
+			str.append(this.unrestEventCount);
+			str.append("\t");
 			str.append(this.examplePost);
 			str.append("\t");
 			str.append(this.exampleEvent);
@@ -114,6 +129,8 @@ public class SummarizeFacebookData {
 			str.append(this.exampleLike);
 			str.append("\t");
 			str.append(this.exampleUnrest);
+			str.append("\t");
+			str.append(this.exampleUnrestEvent);
 			str.append("\t");
 
 			return str.toString();
@@ -136,10 +153,16 @@ public class SummarizeFacebookData {
 		
 		File inputDir = new File(properties.getFacebookDataScrapeDirPath(), "PageData");
 		File[] dataFiles = inputDir.listFiles();
+		TreeMap<Integer, Integer> dataFileUnrestCounts = new TreeMap<Integer, Integer>();
 		for (File dataFile : dataFiles) {
+			int dataFileUnrestCount = 0;
 			List<JsonObject> data = readData(dataFile);
 			if (data == null)
 				continue;
+			if (!dataFile.getName().startsWith("facebookPageData_"))
+				continue;
+			int dataFileId = Integer.parseInt(dataFile.getName().substring(17, dataFile.getName().length()));
+			
 			for (JsonObject datum : data) {
 				String id = datum.getString("id");
 				String type = datum.getString("type");
@@ -176,6 +199,7 @@ public class SummarizeFacebookData {
 							if (prediction != null) {
 								summary.incrementUnrestDetectedCount();
 								summary.setExampleUnrest(post.getString("id"));
+								dataFileUnrestCount++;
 							}
 						} catch (Exception e) {
 							
@@ -198,24 +222,46 @@ public class SummarizeFacebookData {
 							continue;
 						summary.incrementEventCount();
 						summary.setExampleEvent(event.getString("id"));
+						
+						if (!event.has("name"))
+							continue;
+						String eventName = event.getString("name");
+						Detector.Prediction prediction = unrestDetector.getUnrestTermDetector().getPrediction(cleanFn.transform(eventName));
+						if (prediction != null) {
+							summary.incrementUnrestDetectedCount();
+							summary.incrementUnrestEventCount();
+							summary.setExampleUnrestEvent(event.getString("id"));
+							dataFileUnrestCount++;
+						}
 					}
 				}
 			}
+			
+			dataFileUnrestCounts.put(dataFileId, dataFileUnrestCount);
+			System.out.println("Finished processing data file " + dataFileId);
 		}
 		
-		outputSummaries(summaries, outputFile);
+		outputSummaries(summaries, dataFileUnrestCounts, outputFile);
 	}
 	
-	public static void outputSummaries(Map<String, FacebookPageSummary> summaries, File outputFile) {
+	public static void outputSummaries(Map<String, FacebookPageSummary> summaries, Map<Integer, Integer> dataFileUnrestCounts, File outputFile) {
 		try {
 			BufferedWriter w = new BufferedWriter(new FileWriter(outputFile));
-			w.write("Id\tName\tCategory\tPosts\tEvents\tLikes\tUnrest\tEx. Post\tEx. Event\tEx. Like\tEx. Unrest\n");
+			w.write("Id\tName\tCategory\tPosts\tEvents\tLikes\tUnrest\tUnrest Events\tEx. Post\tEx. Event\tEx. Like\tEx. Unrest\nEx. Unrest Event");
 			
 			for (Entry<String, FacebookPageSummary> entry : summaries.entrySet()) {
 				String summaryStr = entry.getValue().toString();
 				w.write(summaryStr + "\n");
 				System.out.println(summaryStr);
 			}
+			
+			w.write("\n\n");
+			
+			w.write("Iteration\tUnrest\n");
+			for (Entry<Integer, Integer> entry : dataFileUnrestCounts.entrySet()) {
+				w.write(entry.getKey() + "\t" + entry.getValue() + "\n");
+			}
+			
 			w.close();
 	    } catch (IOException e) { 
 	    	e.printStackTrace(); 

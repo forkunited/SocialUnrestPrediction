@@ -17,4 +17,8 @@ public class DetectorBBN extends DetectorConjunction {
 		this.detectors.add(new DetectorGazetteer(unrestLocationGazetteer, true));
 		this.detectors.add(new DetectorFutureDate());
 	}
+	
+	public Detector getUnrestTermDetector() {
+		return this.detectors.get(0);
+	}
 }
