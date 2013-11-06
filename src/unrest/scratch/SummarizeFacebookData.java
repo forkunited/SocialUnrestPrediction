@@ -226,8 +226,12 @@ public class SummarizeFacebookData {
 						if (!event.has("name"))
 							continue;
 						String eventName = event.getString("name");
-						Detector.Prediction prediction = unrestDetector.getUnrestTermDetector().getPrediction(cleanFn.transform(eventName));
-						if (prediction != null) {
+						String eventDescription = "";
+						if (event.has("description"))
+							eventDescription = event.getString("description");
+						Detector.Prediction namePrediction = unrestDetector.getUnrestTermDetector().getPrediction(cleanFn.transform(eventName));
+						Detector.Prediction descriptionPrediction = unrestDetector.getUnrestTermDetector().getPrediction(cleanFn.transform(eventDescription));
+						if (namePrediction != null || descriptionPrediction != null) {
 							summary.incrementUnrestDetectedCount();
 							summary.incrementUnrestEventCount();
 							summary.setExampleUnrestEvent(event.getString("id"));
