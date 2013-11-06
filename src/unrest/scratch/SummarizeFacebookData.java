@@ -247,7 +247,7 @@ public class SummarizeFacebookData {
 	public static void outputSummaries(Map<String, FacebookPageSummary> summaries, Map<Integer, Integer> dataFileUnrestCounts, File outputFile) {
 		try {
 			BufferedWriter w = new BufferedWriter(new FileWriter(outputFile));
-			w.write("Id\tName\tCategory\tPosts\tEvents\tLikes\tUnrest\tUnrest Events\tEx. Post\tEx. Event\tEx. Like\tEx. Unrest\nEx. Unrest Event");
+			w.write("Id\tName\tCategory\tPosts\tEvents\tLikes\tUnrest\tUnrest Events\tEx. Post\tEx. Event\tEx. Like\tEx. Unrest\tEx. Unrest Event");
 			
 			for (Entry<String, FacebookPageSummary> entry : summaries.entrySet()) {
 				String summaryStr = entry.getValue().toString();

@@ -24,9 +24,22 @@ public class DetectorGazetteer extends Detector {
 	
 	@Override
 	public Prediction getPrediction(String text, Calendar textTime) {
+		String[] textParts = text.split("\\s+");
 		for (String gazetteerValue : this.gazetteerValues) {
-			if (text.contains(gazetteerValue))
-				return new Prediction(this.minDate, this.maxDate, (this.predictLocation) ? gazetteerValue : null, text);
+			String[] gazetteerValueParts = gazetteerValue.split("\\s+");
+			for (int i = 0; i < textParts.length - (gazetteerValueParts.length - 1); i++) {
+				boolean matches = true;
+				for (int j = 0; j < gazetteerValueParts.length; j++) {
+					if (!textParts[i+j].equals(gazetteerValueParts[j])) {
+						matches = false;
+						break;
+					}
+				}
+				
+				if (matches) {
+					return new Prediction(this.minDate, this.maxDate, (this.predictLocation) ? gazetteerValue : null, text);
+				}
+			}	
 		}
 		
 		return null;
