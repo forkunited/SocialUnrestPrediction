@@ -11,7 +11,7 @@ public class UnrestProperties extends ARKProperties {
 	private int maxThreads;
 	
 	public UnrestProperties() {
-		super(new String[] { "unrest.properties", "/user/wmcdowell/sloan/Projects/CorporateRelationDetection/corp.properties"});
+		super(new String[] { "unrest.properties", "/user/wmcdowell/osi/Projects/SocialUnrestPrediction/unrest.properties"});
 			
 		this.unrestTermGazetteerPath = loadProperty("unrestTermGazetteerPath");
 		this.unrestLocationGazetteerPath = loadProperty("unrestLocationGazetteerPath");
