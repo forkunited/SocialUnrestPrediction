@@ -159,7 +159,7 @@ public class SummarizeFacebookData {
 			List<JsonObject> data = readData(dataFile);
 			if (data == null)
 				continue;
-			if (!dataFile.getName().startsWith("facebookPageData_"))
+			if (!dataFile.getName().startsWith("facebookPageData_") || dataFile.getName().contains("~"))
 				continue;
 			int dataFileId = Integer.parseInt(dataFile.getName().substring(17, dataFile.getName().length()));
 			
