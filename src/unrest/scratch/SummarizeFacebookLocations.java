@@ -47,12 +47,12 @@ public class SummarizeFacebookLocations {
 						continue;
 					timePosts++;
 					
-					if (!post.has("location"))
+					if (!post.has("place") || !post.getJsonObject("place").has("location"))
 						continue;
 					
-					if (post.getJsonObject("location").has("country"))
+					if (post.getJsonObject("place").getJsonObject("location").has("country"))
 						countryTimePosts++;
-					if (post.getJsonObject("location").has("city"))
+					if (post.getJsonObject("place").getJsonObject("location").has("city"))
 						cityTimePosts++;
 				}
 		

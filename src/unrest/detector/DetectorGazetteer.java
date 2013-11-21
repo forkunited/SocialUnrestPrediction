@@ -13,13 +13,26 @@ public class DetectorGazetteer extends Detector {
 	private boolean predictLocation;
 	
 	public DetectorGazetteer(Gazetteer gazetteer, boolean predictLocation) {
-		this.gazetteerValues = gazetteer.getValues();
+		this(gazetteer.getValues(), predictLocation);
+	}
+	
+	public DetectorGazetteer(Set<String> gazetteerValues, boolean predictLocation) {
+		this.gazetteerValues = gazetteerValues;
 		
 		this.maxDate = Calendar.getInstance();
 		this.maxDate.setTime(new Date(Long.MAX_VALUE));
 		this.minDate = Calendar.getInstance();
 		this.minDate.setTime(new Date(Long.MIN_VALUE));
 		this.predictLocation = predictLocation;
+	}
+	
+	public void setGazetteerValues(Set<String> gazetteerValues) {
+		this.gazetteerValues = gazetteerValues;
+	}
+	
+	public void setGazetteerValues(String value) {
+		this.gazetteerValues.clear();
+		this.gazetteerValues.add(value);
 	}
 	
 	@Override
