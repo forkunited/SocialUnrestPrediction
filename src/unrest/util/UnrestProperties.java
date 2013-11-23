@@ -3,11 +3,21 @@ package unrest.util;
 import ark.util.ARKProperties;
 
 public class UnrestProperties extends ARKProperties {
+	/* Gazetteers From BBN for unrest.detector */
 	private String unrestTermGazetteerPath;
 	private String unrestLocationGazetteerPath;
+	
+	/* Gazetteers from previous Twitter logistic regression */
+	private String unrestTermLargeGazetteerPath;
+	private String cityGazetteerPath;
+	private String countryGazetteerPath;
+	private String cityCountryMapGazetteerPath;
+	private String locationLanguageMapGazetteerPath;
+	
 	private String facebookAppID;
 	private String facebookAppSecret;
 	private String facebookDataScrapeDirPath;
+	
 	private int maxThreads;
 	
 	public UnrestProperties() {
@@ -15,11 +25,18 @@ public class UnrestProperties extends ARKProperties {
 			
 		this.unrestTermGazetteerPath = loadProperty("unrestTermGazetteerPath");
 		this.unrestLocationGazetteerPath = loadProperty("unrestLocationGazetteerPath");
+		
+		this.unrestTermLargeGazetteerPath = loadProperty("unrestTermLargeGazetteerPath");
+		this.cityGazetteerPath = loadProperty("cityGazetteerPath");
+		this.countryGazetteerPath = loadProperty("countryGazetteerPath");
+		this.cityCountryMapGazetteerPath = loadProperty("cityCountryMapGazetteerPath");
+		this.locationLanguageMapGazetteerPath = loadProperty("locationLanguageMapGazetteerPath");
+		
 		this.facebookAppID = loadProperty("facebookAppID");
 		this.facebookAppSecret = loadProperty("facebookAppSecret");
 		this.facebookDataScrapeDirPath = loadProperty("facebookDataScrapeDirPath");
-		this.maxThreads = Integer.parseInt(loadProperty("maxThreads"));
-			
+		
+		this.maxThreads = Integer.parseInt(loadProperty("maxThreads"));	
 	}
 	
 	public String getUnrestTermGazetteerPath() {
@@ -28,6 +45,26 @@ public class UnrestProperties extends ARKProperties {
 	
 	public String getUnrestLocationGazetteerPath() {
 		return this.unrestLocationGazetteerPath;
+	}
+	
+	public String getUnrestTermLargeGazetteerPath() {
+		return this.unrestTermLargeGazetteerPath;
+	}
+	
+	public String getCityGazetteerPath() {
+		return this.cityGazetteerPath;
+	}
+	
+	public String getCountryGazetteerPath() {
+		return this.countryGazetteerPath;
+	}
+	
+	public String getCityCountryMapGazetteerPath() {
+		return this.cityCountryMapGazetteerPath;
+	}
+		
+	public String getLocationLanguageMapGazetteerPath() {
+		return this.locationLanguageMapGazetteerPath;
 	}
 	
 	public String getFacebookAppID() {

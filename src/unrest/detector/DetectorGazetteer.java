@@ -3,6 +3,7 @@ package unrest.detector;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Set;
+import java.util.TreeSet;
 
 import ark.data.Gazetteer;
 
@@ -11,6 +12,10 @@ public class DetectorGazetteer extends Detector {
 	private Calendar minDate;
 	private Calendar maxDate;
 	private boolean predictLocation;
+	
+	public DetectorGazetteer() {
+		this(new TreeSet<String>(), false);
+	}
 	
 	public DetectorGazetteer(Gazetteer gazetteer, boolean predictLocation) {
 		this(gazetteer.getValues(), predictLocation);
