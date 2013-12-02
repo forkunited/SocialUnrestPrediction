@@ -51,6 +51,9 @@ public class ConstructGazetteers {
 		Map<String, Set<String>> countryToCities = new HashMap<String, Set<String>>();
 		while ((line = r.readLine()) != null) {
 			String[] lineParts = line.split("\t");
+			if (lineParts.length < 2)
+				continue;
+			
 			String city = lineParts[0];
 			String country = lineParts[1];
 			
