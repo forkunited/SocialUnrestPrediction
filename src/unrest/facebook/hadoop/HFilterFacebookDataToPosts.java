@@ -94,8 +94,7 @@ public class HFilterFacebookDataToPosts {
 						context.write(this.outKey, this.outValue);
 					}
 				} catch (JSONException e) {
-					System.err.println("FAILED: " + value.toString());
-					throw e;
+					throw new JSONException("FAILED: " + value.toString());
 				}
 			}
 			
