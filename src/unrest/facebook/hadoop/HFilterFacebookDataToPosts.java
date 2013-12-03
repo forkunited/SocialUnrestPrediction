@@ -81,6 +81,7 @@ public class HFilterFacebookDataToPosts {
 			List<JSONObject> feedObjs = new ArrayList<JSONObject>();
 			
 			for (Text value : values) {
+				try {
 				JSONObject valueObj = JSONObject.fromObject(value.toString());
 				if (valueObj.getString("type").equals("MAIN"))
 					mainObj = valueObj;
@@ -90,6 +91,10 @@ public class HFilterFacebookDataToPosts {
 					this.outKey.set(key);
 					this.outValue.set(valueObj.toString());
 					context.write(this.outKey, this.outValue);
+				}
+				} catch (Exception e) {
+					System.err.println("FAILED: " + value.toString());
+					throw e;
 				}
 			}
 			
