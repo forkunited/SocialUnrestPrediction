@@ -83,16 +83,16 @@ public class HFilterFacebookDataToPosts {
 			
 			for (Text value : values) {
 				try {
-				JSONObject valueObj = JSONObject.fromObject(value.toString());
-				if (valueObj.getString("type").equals("MAIN"))
-					mainObj = valueObj;
-				else if (valueObj.getString("type").equals("FEED"))
-					feedObjs.add(valueObj);
-				else {
-					this.outKey.set(key);
-					this.outValue.set(valueObj.toString());
-					context.write(this.outKey, this.outValue);
-				}
+					JSONObject valueObj = JSONObject.fromObject(value.toString());
+					if (valueObj.getString("type").equals("MAIN"))
+						mainObj = valueObj;
+					else if (valueObj.getString("type").equals("FEED"))
+						feedObjs.add(valueObj);
+					else {
+						this.outKey.set(key);
+						this.outValue.set(valueObj.toString());
+						context.write(this.outKey, this.outValue);
+					}
 				} catch (JSONException e) {
 					System.err.println("FAILED: " + value.toString());
 					throw e;
