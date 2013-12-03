@@ -33,7 +33,7 @@ public class HFilterFacebookDataToPosts {
 			String id = lineObj.getString("id");
 			JSONObject responseObj = lineObj.getJSONObject("response");
 			
-			this.key.set(id.getBytes());
+			this.key.set(id);
 			
 			if (type.equals("FEED")) {
 				if (!responseObj.has("data"))
@@ -52,7 +52,7 @@ public class HFilterFacebookDataToPosts {
 					outputObj.put("id", id);
 					outputObj.put("type", "FEED");
 					
-					this.value.set(outputObj.toString().getBytes());
+					this.value.set(outputObj.toString());
 					context.write(this.key, this.value);
 				}
 			} else if (type.equals("MAIN")) {
@@ -66,7 +66,7 @@ public class HFilterFacebookDataToPosts {
 				outputObj.put("name", name);
 				outputObj.put("type", "MAIN");
 				
-				this.value.set(outputObj.toString().getBytes());
+				this.value.set(outputObj.toString());
 				context.write(this.key, this.value);
 			}
 		}
@@ -87,8 +87,8 @@ public class HFilterFacebookDataToPosts {
 				else if (valueObj.getString("type").equals("FEED"))
 					feedObjs.add(valueObj);
 				else {
-					this.outKey.set(key.getBytes());
-					this.outValue.set(valueObj.toString().getBytes());
+					this.outKey.set(key);
+					this.outValue.set(valueObj.toString());
 					context.write(this.outKey, this.outValue);
 				}
 			}
@@ -100,8 +100,8 @@ public class HFilterFacebookDataToPosts {
 				feedObj.put("type", "POST");
 				feedObj.put("metadata", mainObj);
 				
-				this.outKey.set(key.getBytes());
-				this.outKey.set(feedObj.toString().getBytes());
+				this.outKey.set(key);
+				this.outKey.set(feedObj.toString());
 				
 				context.write(this.outKey, this.outValue);
 			}
