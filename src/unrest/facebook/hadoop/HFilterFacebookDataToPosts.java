@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.sf.json.JSONArray;
+import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
 import org.apache.hadoop.conf.Configuration;
@@ -76,7 +77,7 @@ public class HFilterFacebookDataToPosts {
 		private Text outKey = new Text();
 		private Text outValue = new Text();
 		
-		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+		public void reduce(Text key, Iterable<Text> values, Context context) throws JSONException, IOException, InterruptedException {
 			JSONObject mainObj = null;
 			List<JSONObject> feedObjs = new ArrayList<JSONObject>();
 			
@@ -92,7 +93,7 @@ public class HFilterFacebookDataToPosts {
 					this.outValue.set(valueObj.toString());
 					context.write(this.outKey, this.outValue);
 				}
-				} catch (Exception e) {
+				} catch (JSONException e) {
 					System.err.println("FAILED: " + value.toString());
 					throw e;
 				}
