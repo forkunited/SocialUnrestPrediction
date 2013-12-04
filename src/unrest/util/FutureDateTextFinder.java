@@ -135,7 +135,13 @@ public class FutureDateTextFinder {
 		Matcher dateMatcher = datePattern.matcher(text);
 		Calendar nextDate = null;
 		if (dateMatcher.find()) {
-			int day = Integer.parseInt(dateMatcher.group(1));
+			int day = 0;
+			try {
+				day = Integer.parseInt(dateMatcher.group(1));
+			} catch (NumberFormatException e) {
+				return null; // Happens sometimes if the number is too big
+			}
+			
 			int month = getMonthIndex(dateMatcher.group(2));	
 			if (month == this.currentDate.get(Calendar.MONTH)) {
 				if (day > this.currentDate.get(Calendar.DATE)) {
