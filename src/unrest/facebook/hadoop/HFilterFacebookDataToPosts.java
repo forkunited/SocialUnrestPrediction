@@ -93,7 +93,7 @@ public class HFilterFacebookDataToPosts {
 						
 						if (valueObj.getString("type").equals("MAIN")) {
 							mainObj = valueObj;
-							if (context.getTaskAttemptID().getTaskType().equals(TaskType.MAP))
+							if (context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
 								context.write(this.outKey, this.outValue); // Only output if combiner
 						} else {
 							context.write(this.outKey, this.outValue);
@@ -113,7 +113,7 @@ public class HFilterFacebookDataToPosts {
 				this.outKey.set(key);
 				this.outValue.set(feedObj.toString());
 				
-				if (mainObj != null || context.getTaskAttemptID().getTaskType().equals(TaskType.MAP))
+				if (mainObj != null || context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
 					context.write(this.outKey, this.outValue);
 			}
 		}
