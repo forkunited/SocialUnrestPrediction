@@ -131,11 +131,10 @@ public class HFeaturizeFacebookPosts {
 		private String getCity(JSONObject postObj) {
 			if (!postObj.has("metadata") ||
 				!postObj.getJSONObject("metadata").has("location") ||
-				!postObj.getJSONObject("metadata").getJSONObject("location").has("place") ||
-				!postObj.getJSONObject("metadata").getJSONObject("location").getJSONObject("place").has("city"))
+				!postObj.getJSONObject("metadata").getJSONObject("location").has("city"))
 				return null;
 			
-			String uncleanCity = postObj.getJSONObject("metadata").getJSONObject("location").getJSONObject("place").getString("city");
+			String uncleanCity = postObj.getJSONObject("metadata").getJSONObject("location").getString("city");
 			if (uncleanCity == null)
 				return null;
 			
@@ -157,11 +156,10 @@ public class HFeaturizeFacebookPosts {
 			
 			if (!postObj.has("metadata") ||
 					!postObj.getJSONObject("metadata").has("location") ||
-					!postObj.getJSONObject("metadata").getJSONObject("location").has("place") ||
-					!postObj.getJSONObject("metadata").getJSONObject("location").getJSONObject("place").has("country"))
+					!postObj.getJSONObject("metadata").getJSONObject("location").has("country"))
 				return cityCountry;
 			
-			String uncleanCountry = postObj.getJSONObject("metadata").getJSONObject("location").getJSONObject("place").getString("country");
+			String uncleanCountry = postObj.getJSONObject("metadata").getJSONObject("location").getString("country");
 			List<String> cleanCountries = this.countryGazetteer.getIds(uncleanCountry);
 			if (cleanCountries != null && !cleanCountries.isEmpty())
 				return cleanCountries.get(0);
