@@ -73,7 +73,10 @@ public class HFeaturizeFacebookPosts {
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String line = value.toString();
-			JSONObject lineObj = JSONObject.fromObject(line);
+			String[] lineParts = line.split("\\t");
+			if (lineParts.length < 2)
+				return;
+			JSONObject lineObj = JSONObject.fromObject(lineParts[1]);
 			
 			if (!lineObj.getString("type").equals("POST"))
 				return;
