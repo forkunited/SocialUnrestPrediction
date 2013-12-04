@@ -136,6 +136,9 @@ public class HFeaturizeFacebookPosts {
 				return null;
 			
 			String uncleanCity = postObj.getJSONObject("metadata").getJSONObject("location").getJSONObject("place").getString("city");
+			if (uncleanCity == null)
+				return null;
+			
 			List<String> cleanCities = this.cityGazetteer.getIds(uncleanCity);
 			if (cleanCities != null && !cleanCities.isEmpty())
 				return cleanCities.get(0);
@@ -144,10 +147,13 @@ public class HFeaturizeFacebookPosts {
 		}
 		
 		private String getCountry(JSONObject postObj, String city) {
-			List<String> cityCountries = this.cityCountryMapGazetteer.getIds(city);
 			String cityCountry = null;
-			if (cityCountries != null && !cityCountries.isEmpty())
-				cityCountry = cityCountries.get(0);
+			
+			if (city != null) {
+				List<String> cityCountries = this.cityCountryMapGazetteer.getIds(city);
+				if (cityCountries != null && !cityCountries.isEmpty())
+					cityCountry = cityCountries.get(0);
+			}
 			
 			if (!postObj.has("metadata") ||
 					!postObj.getJSONObject("metadata").has("location") ||
