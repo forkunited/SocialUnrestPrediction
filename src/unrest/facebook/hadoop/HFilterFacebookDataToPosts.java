@@ -14,7 +14,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.TaskType;
+//import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -93,8 +93,8 @@ public class HFilterFacebookDataToPosts {
 						
 						if (valueObj.getString("type").equals("MAIN")) {
 							mainObj = valueObj;
-							if (context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
-								context.write(this.outKey, this.outValue); // Only output if combiner
+							//if (context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
+							//	context.write(this.outKey, this.outValue); // Only output if combiner
 						} else {
 							context.write(this.outKey, this.outValue);
 						}
@@ -113,7 +113,7 @@ public class HFilterFacebookDataToPosts {
 				this.outKey.set(key);
 				this.outValue.set(feedObj.toString());
 				
-				if (mainObj != null || context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
+				if (mainObj != null)// || context.getTaskAttemptID().getTaskID().getTaskType().equals(TaskType.MAP))
 					context.write(this.outKey, this.outValue);
 			}
 		}
@@ -126,7 +126,7 @@ public class HFilterFacebookDataToPosts {
 		Job job = new Job(conf, "HFilterFacebookDataToPosts");
 		job.setJarByClass(HFilterFacebookDataToPosts.class);
 		job.setMapperClass(FilterFacebookDataToPostsMapper.class);
-		job.setCombinerClass(FilterFacebookDataToPostsReducer.class);
+		//job.setCombinerClass(FilterFacebookDataToPostsReducer.class);
 		job.setReducerClass(FilterFacebookDataToPostsReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
