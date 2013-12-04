@@ -24,8 +24,8 @@ public class UnrestFeatureConjunction extends UnrestFeature {
 	@Override
 	public Map<String, Integer> compute(String text, Calendar textTime) {
 		Map<String, Integer> values = new HashMap<String, Integer>();
-		Map<String, Integer> feature1Values = this.feature1.compute(text);
-		Map<String, Integer> feature2Values = this.feature2.compute(text);
+		Map<String, Integer> feature1Values = this.feature1.compute(text, textTime);
+		Map<String, Integer> feature2Values = this.feature2.compute(text, textTime);
 		
 		// TODO: For now, this just uses first feature's keys, but make more flexible
 		// later if necessary

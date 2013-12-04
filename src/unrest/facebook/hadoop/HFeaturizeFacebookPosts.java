@@ -97,7 +97,7 @@ public class HFeaturizeFacebookPosts {
 			
 			for (UnrestFeature feature : this.features) {
 				String featureName = feature.getName();
-				Map<String, Integer> featureValues = feature.compute(message, date);
+				Map<String, Integer> featureValues = feature.compute(message, this.date);
 				for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
 					/* Output for city */
 					if (city != null) {
