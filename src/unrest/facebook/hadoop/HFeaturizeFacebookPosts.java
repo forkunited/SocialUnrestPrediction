@@ -75,6 +75,9 @@ public class HFeaturizeFacebookPosts {
 			String line = value.toString();
 			JSONObject lineObj = JSONObject.fromObject(line);
 			
+			if (!lineObj.getString("type").equals("POST"))
+				return;
+			
 			String city = getCity(lineObj);
 			String country = getCountry(lineObj, city);
 			

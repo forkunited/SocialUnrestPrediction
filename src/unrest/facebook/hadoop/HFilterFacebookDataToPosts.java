@@ -14,6 +14,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
@@ -84,31 +85,36 @@ public class HFilterFacebookDataToPosts {
 			for (Text value : values) {
 				try {
 					JSONObject valueObj = JSONObject.fromObject(value.toString());
-					if (valueObj.getString("type").equals("MAIN"))
-						mainObj = valueObj;
-					else if (valueObj.getString("type").equals("FEED"))
+					if (valueObj.getString("type").equals("FEED"))
 						feedObjs.add(valueObj);
 					else {
 						this.outKey.set(key);
 						this.outValue.set(valueObj.toString());
-						context.write(this.outKey, this.outValue);
+						
+						if (valueObj.getString("type").equals("MAIN")) {
+							mainObj = valueObj;
+							if (context.getTaskAttemptID().getTaskType().equals(TaskType.MAP))
+								context.write(this.outKey, this.outValue); // Only output if combiner
+						} else {
+							context.write(this.outKey, this.outValue);
+						}
 					}
 				} catch (JSONException e) {
 					throw new JSONException("FAILED: " + value.toString());
 				}
 			}
 			
-			if (feedObjs.size() > 0 && mainObj == null)
-				return;
-			
 			for (JSONObject feedObj : feedObjs) {
-				feedObj.put("type", "POST");
-				feedObj.put("metadata", mainObj);
+				if (mainObj != null) {
+					feedObj.put("type", "POST");
+					feedObj.put("metadata", mainObj);
+				}
 				
 				this.outKey.set(key);
-				this.outKey.set(feedObj.toString());
+				this.outValue.set(feedObj.toString());
 				
-				context.write(this.outKey, this.outValue);
+				if (mainObj != null || context.getTaskAttemptID().getTaskType().equals(TaskType.MAP))
+					context.write(this.outKey, this.outValue);
 			}
 		}
 	}
