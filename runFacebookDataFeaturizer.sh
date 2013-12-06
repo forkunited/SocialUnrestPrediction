@@ -40,7 +40,7 @@ cat /home/wmcdowell/osi/Data/Facebook/12-02-2013/tmp/part-r-* > /home/wmcdowell/
 
 # Split mean, sd, and counts for each feature into aggregate files for each language and vocab files for each language/feature
 cd /home/wmcdowell/osi/Projects/SocialUnrestPrediction
-ant FeatureTermAggregateSplitter -DaggregateTermInputPath="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TermAggregates"
+ant FeatureTermAggregateSplitter -DaggregateTermInputPath="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TermAggregates" -DfeatureVocabOutputPathPrefix="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TermAggregates.vocab" -DfeatureAggregateOutputPathPrefix="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TermAggregates.agg"
 
 # Copy split aggregate files to hdfs
 hadoop dfs -rmr /user/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TermAggregates.*

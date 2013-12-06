@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import unrest.util.UnrestProperties;
-
 /**
  * Takes in a document containing lines of the form:
  * 
@@ -31,11 +29,13 @@ import unrest.util.UnrestProperties;
 public class FeatureTermAggregateSplitter {
 	public static void main(String[] args) {
 		String aggregateTermInputPath = args[0];
+		String featureVocabOutputPathPrefix = args[1];
+		String featureAggregateOutputPathPrefix = args[2];
+		
 		int N = 25000;
 		if (args.length > 1)
-			N = Integer.parseInt(args[1]);
+			N = Integer.parseInt(args[3]);
 		
-		UnrestProperties properties = new UnrestProperties();
 		Map<String, AggregateTermMap> termMaps = new HashMap<String, AggregateTermMap>();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(aggregateTermInputPath));
@@ -64,11 +64,11 @@ public class FeatureTermAggregateSplitter {
 			Map<String, Map<String, Integer>> vocabulary = languageEntry.getValue().getVocabulary(N);
 			
 			// Save term aggregates for language
-			languageEntry.getValue().save(vocabulary);
+			languageEntry.getValue().save(vocabulary, featureAggregateOutputPathPrefix);
 			
 			for (Entry<String, Map<String, Integer>> featureEntry : vocabulary.entrySet()) {
 				try {
-					BufferedWriter bw = new BufferedWriter(new FileWriter(properties.getFacebookFeatureVocabPathPrefix() + "." + languageEntry.getKey() + "." + featureEntry.getKey()));
+					BufferedWriter bw = new BufferedWriter(new FileWriter(featureVocabOutputPathPrefix + "." + languageEntry.getKey() + "." + featureEntry.getKey()));
 				
 					for (Entry<String, Integer> termEntry : featureEntry.getValue().entrySet()) {
 						bw.write(termEntry.getValue() + "\t" + termEntry.getKey() + "\n");

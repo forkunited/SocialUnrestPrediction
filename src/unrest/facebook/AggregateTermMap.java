@@ -118,10 +118,9 @@ public class AggregateTermMap {
 		this.aggregateMap.get(featureType).put(featureTerm, new Aggregates(mean, sd, count));
 	}
 	
-	public void save(Map<String, Map<String, Integer>> vocabFilter) {
+	public void save(Map<String, Map<String, Integer>> vocabFilter, String pathPrefix) {
 		try {
-			UnrestProperties properties = new UnrestProperties();
-			BufferedWriter bw = new BufferedWriter(new FileWriter(properties.getFacebookFeatureAggregatePathPrefix() + "." + this.language));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(pathPrefix + "." + this.language));
 			
 			for (Entry<String, Map<String, Aggregates>> featureEntry : this.aggregateMap.entrySet()) {
 				if (!vocabFilter.containsKey(featureEntry.getKey()))
