@@ -80,7 +80,7 @@ public class HFeaturizeFacebookPosts {
 		private Gazetteer cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
 		private Gazetteer locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
 		private SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
-		private SimpleDateFormat outputDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+		private SimpleDateFormat outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
 		private Calendar date = Calendar.getInstance();
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
@@ -114,9 +114,9 @@ public class HFeaturizeFacebookPosts {
 					/* Output for city */
 					if (city != null) {
 						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
-						keyStr = keyStr.append(featureName).append("\t");
-						keyStr = keyStr.append(city).append("\t");
+						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append(",");
+						keyStr = keyStr.append(featureName).append(",");
+						keyStr = keyStr.append(city).append(",");
 						keyStr = keyStr.append(featureValue.getKey());
 						
 						this.key.set(keyStr.toString().trim());
@@ -127,9 +127,9 @@ public class HFeaturizeFacebookPosts {
 					/* Output for country */
 					if (country != null) {
 						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
-						keyStr = keyStr.append(featureName).append("\t");
-						keyStr = keyStr.append(country).append("\t");
+						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append(",");
+						keyStr = keyStr.append(featureName).append(",");
+						keyStr = keyStr.append(country).append(",");
 						keyStr = keyStr.append(featureValue.getKey());
 						
 						this.key.set(keyStr.toString().trim());
@@ -204,6 +204,7 @@ public class HFeaturizeFacebookPosts {
 	}
 
 	public static class FeaturizeFacebookPostsReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+		private Text outKey = new Text();
 		private IntWritable outValue = new IntWritable();
 		
 		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
@@ -212,8 +213,9 @@ public class HFeaturizeFacebookPosts {
 				sum += value.get();
 			}
 			
+			this.outKey.set(key.toString().replace(",", "\t"));
 			this.outValue.set(sum);
-			context.write(key, this.outValue);
+			context.write(this.outKey, this.outValue);
 		}
 	}
 
@@ -228,6 +230,7 @@ public class HFeaturizeFacebookPosts {
 		job.setReducerClass(FeaturizeFacebookPostsReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
+		
 		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
 		
