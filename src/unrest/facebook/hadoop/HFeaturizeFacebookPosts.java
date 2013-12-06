@@ -32,6 +32,18 @@ import unrest.feature.UnrestFeatureTotal;
 import unrest.feature.UnrestFeatureUnigram;
 import unrest.util.UnrestProperties;
 
+/**
+ * Takes in lines output from HFilterFacebookDataToPosts of the form:
+ * 
+ * [Facebook Page ID]	[Facebook Post Object]
+ * 
+ * And outputs lines of the form:
+ * 
+ * [Date]	[Feature Type]	[Location]	[Feature Term]	[Count]
+ * 
+ * This output can be used as one of the inputs to the social unrest prediction 
+ * tool (prediction, but not training).
+ */
 public class HFeaturizeFacebookPosts {
 	private static String languageFilter = null;
 	

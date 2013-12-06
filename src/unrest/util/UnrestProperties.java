@@ -14,6 +14,11 @@ public class UnrestProperties extends ARKProperties {
 	private String cityCountryMapGazetteerPath;
 	private String locationLanguageMapGazetteerPath;
 	
+	/* Files for training unrest model on Facebook data */
+	private String facebookPostDateLocationTotalsPath;
+	private String facebookFeatureVocabPathPrefix;
+	private String facebookFeatureAggregatePathPrefix;
+	
 	private String facebookAppID;
 	private String facebookAppSecret;
 	private String facebookDataScrapeDirPath;
@@ -31,6 +36,10 @@ public class UnrestProperties extends ARKProperties {
 		this.countryGazetteerPath = loadProperty("countryGazetteerPath");
 		this.cityCountryMapGazetteerPath = loadProperty("cityCountryMapGazetteerPath");
 		this.locationLanguageMapGazetteerPath = loadProperty("locationLanguageMapGazetteerPath");
+		
+		this.facebookPostDateLocationTotalsPath = loadProperty("facebookPostDateLocationTotalsPath");
+		this.facebookFeatureVocabPathPrefix = loadProperty("facebookFeatureVocabPathPrefix");
+		this.facebookFeatureAggregatePathPrefix = loadProperty("facebookFeatureAggregatePathPrefix");
 		
 		this.facebookAppID = loadProperty("facebookAppID");
 		this.facebookAppSecret = loadProperty("facebookAppSecret");
@@ -67,6 +76,18 @@ public class UnrestProperties extends ARKProperties {
 		return this.locationLanguageMapGazetteerPath;
 	}
 	
+	public String getFacebookPostDateLocationTotalsPath() {
+		return this.facebookPostDateLocationTotalsPath;
+	}
+	
+	public String getFacebookFeatureVocabPathPrefix() {
+		return this.facebookFeatureVocabPathPrefix;
+	}
+	
+	public String getFacebookFeatureAggregatePathPrefix() {
+		return this.facebookFeatureAggregatePathPrefix;
+	}
+				
 	public String getFacebookAppID() {
 		return this.facebookAppID;
 	}

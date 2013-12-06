@@ -19,6 +19,16 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+/**
+ * Takes in a single Facebook data JSON object per line (from scraper), and outputs lines of the form:
+ * 
+ * [Facebook Page ID]	[Facebook Post Object]
+ * 
+ * There can be several post objects for a given page id (resulting in several output lines).
+ * A post object consists of data for a single Facebook post (originally from a "FEED" Facebook scraper
+ * JSON object), along with meta-data describing the page on which the post was posted (originally from
+ * a "MAIN" Facebook scraper JSON object.
+ */
 public class HFilterFacebookDataToPosts {
 	
 	public static class FilterFacebookDataToPostsMapper extends Mapper<Object, Text, Text, Text> {

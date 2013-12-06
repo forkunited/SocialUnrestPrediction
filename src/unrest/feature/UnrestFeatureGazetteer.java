@@ -33,7 +33,7 @@ public class UnrestFeatureGazetteer extends UnrestFeature {
 		for (String gazetteerValue : this.gazetteerValues) {
 			this.detector.setGazetteerValues(gazetteerValue);
 			if (this.detector.getPrediction(cleanText) != null)
-				values.put(gazetteerValue, 1);
+				values.put(gazetteerValue.trim().replaceAll("\\s+", "_"), 1);
 		}
 		
 		return values;
