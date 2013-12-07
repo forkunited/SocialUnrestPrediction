@@ -114,9 +114,9 @@ public class HFeaturizeFacebookPosts {
 					/* Output for city */
 					if (city != null) {
 						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append(",");
-						keyStr = keyStr.append(featureName).append(",");
-						keyStr = keyStr.append(city).append(",");
+						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
+						keyStr = keyStr.append(featureName).append("\t");
+						keyStr = keyStr.append(city).append("\t");
 						keyStr = keyStr.append(featureValue.getKey());
 						
 						this.key.set(keyStr.toString().trim());
@@ -127,9 +127,9 @@ public class HFeaturizeFacebookPosts {
 					/* Output for country */
 					if (country != null) {
 						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append(",");
-						keyStr = keyStr.append(featureName).append(",");
-						keyStr = keyStr.append(country).append(",");
+						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
+						keyStr = keyStr.append(featureName).append("\t");
+						keyStr = keyStr.append(country).append("\t");
 						keyStr = keyStr.append(featureValue.getKey());
 						
 						this.key.set(keyStr.toString().trim());
@@ -213,7 +213,7 @@ public class HFeaturizeFacebookPosts {
 				sum += value.get();
 			}
 			
-			this.outKey.set(key.toString().replace(",", "\t"));
+			this.outKey.set(key.toString());
 			this.outValue.set(sum);
 			context.write(this.outKey, this.outValue);
 		}
