@@ -111,6 +111,9 @@ public class HFeaturizeFacebookPosts {
 				String featureName = feature.getName();
 				Map<String, Integer> featureValues = feature.compute(message, this.date);
 				for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
+					if (featureValue.getKey().trim().length() == 0)
+						continue;
+					
 					/* Output for city */
 					if (city != null) {
 						StringBuilder keyStr = new StringBuilder();
