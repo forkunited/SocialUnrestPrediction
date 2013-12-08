@@ -14,11 +14,11 @@ import java.util.Map.Entry;
  * 
  * [Language]	[Feature Type]	[Feature Term]	[Mean]	[Standard Deviation]	[Count]
  * 
- * And outputs a files [Prefix].agg.[Language] containing lines of the form:
+ * And outputs a files [Prefix].[Language] containing lines of the form:
  * 
  * [Feature Type]	[Feature Term]	[Mean]	[Standard Deviation]
  * 
- * And also files [Prefix].vocab.[Language].[Feature Type].vocabulary containing lines of the form:
+ * And also files [Prefix].[Language].[Feature Type].vocabulary containing lines of the form:
  * 
  * [Count]	[Feature Term]
  * 

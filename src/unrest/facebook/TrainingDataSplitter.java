@@ -20,7 +20,7 @@ import unrest.util.LocationLanguageMap;
  * 
  * [Feature Type]	[Date]	[Location]	[Feature Value List]
  * 
- * And outputs a files [Prefix].train.[Language].[Feature Type] containing lines of the form:
+ * And outputs a files [Prefix].[Language].[Feature Type] containing lines of the form:
  * 
  * [Location]	[Date]	[Feature Value List]
  * 

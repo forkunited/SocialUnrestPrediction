@@ -54,4 +54,8 @@
 #hadoop dfs -copyToLocal /user/wmcdowell/osi/Data/Facebook/12-02-2013TrainingData/part-r-* /home/wmcdowell/osi/Data/Facebook/12-02-2013/tmp/
 #cat /home/wmcdowell/osi/Data/Facebook/12-02-2013/tmp/part-r-* > /home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TrainingData
 
+# Split training data into separate files for each language/feature
+#cd /home/wmcdowell/osi/Projects/SocialUnrestPrediction
+#ant TrainingDataSplitter -DtrainingDataInputPath="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013TrainingData" -DoutputPathPrefix="/home/wmcdowell/osi/Data/Facebook/12-02-2013/12-02-2013.train"
+
 #rm -rf /home/wmcdowell/osi/Data/Facebook/12-02-2013/tmp/
