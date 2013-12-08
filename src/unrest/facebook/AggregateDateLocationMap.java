@@ -1,10 +1,11 @@
 package unrest.facebook;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import ark.util.FileUtil;
 
 public class AggregateDateLocationMap {
 	private Map<String, Map<String, Double>> aggregateMap;
@@ -26,7 +27,7 @@ public class AggregateDateLocationMap {
 	
 	private void load(String sourceFilePath) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(sourceFilePath));
+			BufferedReader br = FileUtil.getFileReader(sourceFilePath);
 			String line = null;
 			while ((line = br.readLine()) != null) {
 				String[] lineParts = line.split("\\t");

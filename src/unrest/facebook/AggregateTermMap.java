@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import ark.util.FileUtil;
+
 import unrest.util.UnrestProperties;
 
 public class AggregateTermMap {
@@ -141,7 +143,7 @@ public class AggregateTermMap {
 	private void load() {
 		try {
 			UnrestProperties properties = new UnrestProperties();
-			BufferedReader br = new BufferedReader(new FileReader(properties.getFacebookFeatureAggregatePathPrefix() + "." + this.language));
+			BufferedReader br = FileUtil.getFileReader(properties.getFacebookFeatureAggregatePathPrefix() + "." + this.language);
 			
 			String line = null;
 			while ((line = br.readLine()) != null) {
