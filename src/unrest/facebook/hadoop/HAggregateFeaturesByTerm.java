@@ -123,7 +123,6 @@ public class HAggregateFeaturesByTerm {
 		Job job = new Job(conf, "HAggregateFeaturesByTerm");
 		job.setJarByClass(HAggregateFeaturesByTerm.class);
 		job.setMapperClass(AggregateFeaturesByTermMapper.class);
-		job.setCombinerClass(AggregateFeaturesByTermReducer.class);
 		job.setReducerClass(AggregateFeaturesByTermReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
