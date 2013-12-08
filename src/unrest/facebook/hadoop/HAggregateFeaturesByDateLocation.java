@@ -42,13 +42,7 @@ public class HAggregateFeaturesByDateLocation {
 			String date = lineParts[0];
 			String featureType = lineParts[1];
 			String location = lineParts[2];
-			int count = 0;
-			
-			try {
-				count = Integer.parseInt(lineParts[4]);
-			} catch (Exception e) {
-				throw new IOException("Line: " + line + "... Key: " + key + "... Date: " + date + "... Type: " + featureType);
-			}
+			int count = Integer.parseInt(lineParts[4]);
 				
 			if (!featureType.equals(featureTypeFilter.getName()))
 				return;
