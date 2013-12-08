@@ -33,7 +33,7 @@ public class FeatureTermAggregateSplitter {
 		String featureAggregateOutputPathPrefix = args[2];
 		
 		int N = 25000;
-		if (args.length > 1)
+		if (args.length > 3)
 			N = Integer.parseInt(args[3]);
 		
 		Map<String, AggregateTermMap> termMaps = new HashMap<String, AggregateTermMap>();
