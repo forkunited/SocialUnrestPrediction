@@ -1,7 +1,6 @@
 package unrest.facebook.hadoop;
 
 import java.io.IOException;
-import java.util.List;
 
 import net.sf.json.JSONException;
 
@@ -15,9 +14,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import ark.data.Gazetteer;
-
 import unrest.facebook.AggregateDateLocationMap;
+import unrest.util.LocationLanguageMap;
 import unrest.util.UnrestProperties;
 
 /**
@@ -41,8 +39,7 @@ public class HAggregateFeaturesByTerm {
 		private Text value = new Text();
 		
 		private UnrestProperties properties = new UnrestProperties();
-		private Gazetteer cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
-		private Gazetteer locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
+		private LocationLanguageMap languageMap = new LocationLanguageMap(properties);
 		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
@@ -53,7 +50,7 @@ public class HAggregateFeaturesByTerm {
 			String location = lineParts[2];
 			String featureTerm = lineParts[3];
 			int count = Integer.parseInt(lineParts[4]);
-			String language = getLanguage(location);
+			String language = this.languageMap.getLanguage(location);
 			double dateLocationTotal = this.dateLocationPostTotals.getAggregate(date, location);
 			
 			if (language == null)
@@ -62,23 +59,6 @@ public class HAggregateFeaturesByTerm {
 			this.key.set(language + "\t" + featureType + "\t" + featureTerm);
 			this.value.set(count + "\t" + dateLocationTotal);
 			context.write(this.key, this.value);
-		}
-		
-		public String getLanguage(String location) {
-			List<String> langs = this.locationLanguageMapGazetteer.getIds(location);
-			if (langs != null && !langs.isEmpty())
-				return langs.get(0);
-			
-			List<String> countries = this.cityCountryMapGazetteer.getIds(location);
-			if (countries == null)
-				return null;
-			for (String country : countries) {
-				langs = this.locationLanguageMapGazetteer.getIds(country);
-				if (langs != null && !langs.isEmpty())
-					return langs.get(0);
-			}
-			
-			return null;
 		}
 	}
 
