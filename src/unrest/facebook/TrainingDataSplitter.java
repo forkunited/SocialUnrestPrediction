@@ -64,7 +64,7 @@ public class TrainingDataSplitter {
 		
 			for (Entry<String, Map<String, List<String>>> languageEntry : languageToFeatureToLines.entrySet()) {
 				for (Entry<String, List<String>> featureEntry : languageEntry.getValue().entrySet()) {
-					BufferedWriter bw = new BufferedWriter(new FileWriter(outputPathPrefix + ".train." + languageEntry.getKey() + "." + featureEntry.getKey()));
+					BufferedWriter bw = new BufferedWriter(new FileWriter(outputPathPrefix + "." + languageEntry.getKey() + "." + featureEntry.getKey()));
 				
 					for (String outputLine : featureEntry.getValue()) {
 						bw.write(outputLine + "\n");
