@@ -57,7 +57,7 @@ public class HFeaturizeFacebookPosts {
 		UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
 		UnrestFeature unigram = new UnrestFeatureUnigram();
 		UnrestFeature handTom = new UnrestFeatureConjunction("handTom", hand, tom);
-		UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", hand, tom);
+		UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", unigram, tom);
 		
 		List<UnrestFeature> features = new ArrayList<UnrestFeature>();
 		features.add(total);

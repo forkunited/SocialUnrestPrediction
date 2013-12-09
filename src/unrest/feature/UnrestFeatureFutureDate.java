@@ -30,6 +30,9 @@ public class UnrestFeatureFutureDate extends UnrestFeature {
 	public Map<String, Integer> compute(String text, Calendar textTime) {
 		Map<String, Integer> values = new TreeMap<String, Integer>();
 		String cleanText = this.cleanFn.transform(text);
+		
+		this.finder.setCurrentDate(textTime);
+		
 		List<Calendar> futureDates = this.finder.findFutureDates(cleanText);
 		
 		if (this.onlyTomorrow) {

@@ -1,11 +1,20 @@
 package unrest.scratch;
 
-import unrest.util.FutureDateTextFinder;
+import unrest.feature.UnrestFeature;
+import unrest.feature.UnrestFeatureConjunction;
+import unrest.feature.UnrestFeatureFutureDate;
+//import unrest.feature.UnrestFeatureGazetteer;
+//import unrest.feature.UnrestFeatureTotal;
+import unrest.feature.UnrestFeatureUnigram;
+//import unrest.util.FutureDateTextFinder;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.List;
+//import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class Scratch {
 	public static void main(String[] args) {
@@ -36,13 +45,34 @@ public class Scratch {
 		Detector.Prediction p = detector.getPrediction(cleanFn.transform(s), date);
 		System.out.println(p);*/
 		//System.out.println("mañana");
-		FutureDateTextFinder d = new FutureDateTextFinder(Calendar.getInstance());
-		DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+		
+		/*
+		 * FutureDateTextFinder d = new FutureDateTextFinder(Calendar.getInstance());
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
 		List<Calendar> dates = d.findFutureDates("30 de novembro");
+		//2013-04-09T16:44:22+0000
 		System.out.println(df.format(dates.get(0).getTime()));
 		dates.get(0).add(Calendar.DAY_OF_MONTH, 1);
 		
 		System.out.println(df.format(dates.get(0).getTime()));
 		System.out.println(dates.get(0).get(Calendar.DATE));
+		 */
+		
+		UnrestFeature tom = new UnrestFeatureFutureDate(true);
+		UnrestFeature unigram = new UnrestFeatureUnigram();
+		UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", unigram, tom);
+		
+		Calendar c = Calendar.getInstance();
+		DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
+		try {
+			c.setTime(df.parse("2013-04-09T16:44:22+0000"));
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Map<String, Integer> values = unigramTom.compute("10 de abril protesta", c);
+		for (Entry<String, Integer> entry : values.entrySet()) {
+			System.out.println(entry.getKey() + ": " + entry.getValue());
+		}
 	}
 }
