@@ -106,7 +106,7 @@ public class HDetectUnrestFacebookPosts {
 				this.key.set("country\t" +
 						predictionCountry + "\t" + 
 						this.outputDateFormat.format(predictionDate));
-				this.value.set("1\t" + line);
+				this.value.set("1\t" + lineParts[1]);
 				context.write(this.key, this.value);
 			}
 		}
