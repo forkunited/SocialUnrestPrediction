@@ -9,9 +9,14 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
 
+
+import unrest.util.LocationLanguageMap;
+
 public class EvaluateDetectedUnrestFacebook {
+	private static String languageFilter = "es";
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy");
-	
+	private static LocationLanguageMap languageMap = new LocationLanguageMap();
+
 	public static void main(String[] args) {
 		String predictedUnrestFilter = args[0];
 		String actualUnrestPath = args[1];
@@ -86,6 +91,9 @@ public class EvaluateDetectedUnrestFacebook {
 				if (minDate != null && maxDate != null && (date.compareTo(minDate) < 0 || date.compareTo(maxDate) > 0))
 					continue;
 				
+				if (!validLanguage(location))
+					continue;
+				
 				String locationDate = location + "\t" + dateStr;
 				if (unrestLocationDates.contains(locationDate))
 					System.out.println("Duplicate location/date in " + path + ": " + locationDate);
@@ -99,5 +107,16 @@ public class EvaluateDetectedUnrestFacebook {
 		}
 		
 		return unrestLocationDates;
+	}
+	
+	private static boolean validLanguage(String location) {
+		if (languageFilter == null)
+			return true;
+		
+		String language = languageMap.getLanguage(location);
+		if (language == null)
+			return false;
+		
+		return language.equals(languageFilter);
 	}
 }
