@@ -37,8 +37,8 @@ public class EvaluateDetectedUnrestFacebook {
 		double r = correctCount/actualUnrest.size(); // recall
 		double f1 = (2.0*p*r)/(p+r);
 		
-		System.out.println("Precision: " + p);
-		System.out.println("Recall: " + r);
+		System.out.println("Precision: " + p + "\t" + (int)correctCount + "/" + predictedUnrest.size());
+		System.out.println("Recall: " + r + "\t" + (int)correctCount + "/" + actualUnrest.size());
 		System.out.println("F1: " + f1);
 	}
 	
