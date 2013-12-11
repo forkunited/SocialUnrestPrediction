@@ -86,7 +86,11 @@ public class EvaluateDetectedUnrestFacebook {
 				if (minDate != null && maxDate != null && (date.compareTo(minDate) < 0 || date.compareTo(maxDate) > 0))
 					continue;
 				
-				unrestLocationDates.add(location + "\t" + dateStr);
+				String locationDate = location + "\t" + dateStr;
+				if (unrestLocationDates.contains(locationDate))
+					System.out.println("Duplicate location/date in " + path + ": " + locationDate);
+				
+				unrestLocationDates.add(locationDate);
 			}
 			
 			br.close();
