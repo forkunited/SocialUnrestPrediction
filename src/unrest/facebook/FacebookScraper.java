@@ -49,9 +49,9 @@ public class FacebookScraper {
 	private static CharSequence FACEBOOK_IGNORE_URL = "https://graph.facebook.com/";
 	private static SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static int MAX_PAGE_REQUESTS_PER_ITERATION = 50; //50 // Each query has 4 facebook requests
-	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 50; //50;
+	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 10; //50;
 	private static int MAX_ERROR_RETRIES = 5;
-	private static int ERROR_SLEEP_MILLIS = 1000*60*4; // 4 min
+	private static int ERROR_SLEEP_MILLIS = 1000;//1000*60*4; // 4 min
 	
 	public enum PageRequestType {
 		MAIN,
@@ -484,94 +484,98 @@ public class FacebookScraper {
 		
 		String[] responses = new String[requests.length];
 		BatchRequest[] batchRequests = new BatchRequest[requests.length];
-		for (int i = 0; i < batchRequests.length; i++) {
-			writeLog("Executing Facebook request: " + requests[i]);
-			batchRequests[i] = new BatchRequest.BatchRequestBuilder(requests[i]).build();
-		}
-
 		List<BatchResponse> batchResponses = null;
-		int retries = 0;
-		while (batchResponses == null && retries < FacebookScraper.MAX_ERROR_RETRIES) {
-			try {
-				batchResponses = this.client.executeBatch(batchRequests);
-			} catch(FacebookOAuthException fe) {
-				writeLog("Error: Failed to execute Facebook batch request (OAuth). Message: " + fe.getErrorMessage() + "... Getting new access token and retrying...");
-				initializeFacebookClient();
-				retries++;
-			} catch(FacebookException fe) {
-				try {
-					writeLog("Error: Failed to execute Facebook batch request. Message: " + fe.getMessage() + "...  Sleeping for a bit and then retrying...");
-					Thread.sleep(FacebookScraper.ERROR_SLEEP_MILLIS);
-					retries++;
-				} catch (Exception e) {
-					writeLog("Error: Had too much trouble sleeping.  Exiting...");
-					System.exit(0);
-				}
+		synchronized (this) { // Not threaded for now because getting mysterious 504 errors when sending more than once batch at a time
+			for (int i = 0; i < batchRequests.length; i++) {
+				writeLog("Executing Facebook request: " + requests[i]);
+				batchRequests[i] = new BatchRequest.BatchRequestBuilder(requests[i]).build();
 			}
-		}
-		
-		if (batchResponses == null) {
-			writeLog("Error: Too many failed batch request attempts.  Exiting...");
-			System.exit(0);
-		}
-		
-		for (int i = 0; i < batchResponses.size(); i++) {
-			BatchResponse response = batchResponses.get(i);
-			if (response == null) {
-				writeLog("Error: Missing Facebook response for request " + batchRequests[i].getRelativeUrl() + ".  Retrying...");
-				
-				/// Try retrying instead of skipping...
-				String[] remainingRequests = Arrays.copyOfRange(requests, i, requests.length);
-				String[] remainingResponses = executeFacebookRequests(remainingRequests);
-				for (int j = i; j < responses.length; j++)
-					responses[j] = remainingResponses[j-i];
-				return responses;
-			} else if (response.getCode() == 200) {
-				responses[i] = response.getBody();
-			} else {
-				// TODO Make constants for these later if used anywhere else
-				// See: https://developers.facebook.com/docs/reference/api/errors/
-				JsonObject responseBody = new JsonObject(response.getBody());
-				if (!responseBody.has("error")) {
-					writeLog("Error: Facebook request failed without error (" + responseBody.toString() + "). Skipping request " + batchRequests[i].getRelativeUrl());
-					continue;
-				}
-				
-				JsonObject errorObj = responseBody.getJsonObject("error");
-				if (!errorObj.has("code")) {
-					writeLog("Error: Facebook request failed with code-less error (" + errorObj.toString() + ") (" + responseBody.toString() +").  Skipping request " + batchRequests[i].getRelativeUrl());
-					continue; // Skip	
-				}
-				int errorCode = errorObj.getInt("code");
-				if (errorCode == 190 	// OAuth
-				 || errorCode == 102	// API Session
-				) { 
-					writeLog("Error: Facebook request failed (OAuth).  Getting new access token and retrying...");
+			
+			int retries = 0;
+			while (batchResponses == null && retries < FacebookScraper.MAX_ERROR_RETRIES) {
+				try {
+					batchResponses = this.client.executeBatch(batchRequests);
+				} catch(FacebookOAuthException fe) {
+					writeLog("Error: Failed to execute Facebook batch request (OAuth). Message: " + fe.getErrorMessage() + "... Getting new access token and retrying...");
 					initializeFacebookClient();
-				} else if (/*errorCode == 1	// API Unknown
-						|| errorCode == 2	// API Service
-						|| */errorCode == 4	// API Too Many Calls
-						|| errorCode == 17  // API User Too Many Calls
-						|| errorCode == 613 // FQL Rate limit exceeded
-				) {
+					retries++;
+				} catch(FacebookException fe) {
 					try {
-						writeLog("Error: Facebook request failed. Waiting a bit and then retrying...");
+						writeLog("Error: Failed to execute Facebook batch request. Message: " + fe.getMessage() + "...  Sleeping for a bit (" + FacebookScraper.ERROR_SLEEP_MILLIS + ") and then retrying...");
 						Thread.sleep(FacebookScraper.ERROR_SLEEP_MILLIS);
+						retries++;
 					} catch (Exception e) {
-						writeLog("Error: Had too much trouble sleeping. Exiting...");
+						writeLog("Error: Had too much trouble sleeping.  Exiting...");
 						System.exit(0);
 					}
-				} else {
-					writeLog("Error: Facebook request failed for unknown reasons (Code: " + errorCode + ").  Skipping request " + batchRequests[i].getRelativeUrl());
-					continue; // Skip it
 				}
-				
-				String[] remainingRequests = Arrays.copyOfRange(requests, i, requests.length);
-				String[] remainingResponses = executeFacebookRequests(remainingRequests);
-				for (int j = i; j < responses.length; j++)
-					responses[j] = remainingResponses[j-i];
-						
-				return responses;
+			}
+		
+			if (batchResponses == null) {
+				writeLog("Error: Too many failed batch request attempts.  Exiting...");
+				System.exit(0);
+			} else {
+				writeLog("Successfully executed a batch of requests.");
+			}
+			
+			for (int i = 0; i < batchResponses.size(); i++) {
+				BatchResponse response = batchResponses.get(i);
+				if (response == null) {
+					writeLog("Error: Missing Facebook response for request " + batchRequests[i].getRelativeUrl() + ".  Retrying...");
+					
+					/// Try retrying instead of skipping...
+					String[] remainingRequests = Arrays.copyOfRange(requests, i, requests.length);
+					String[] remainingResponses = executeFacebookRequests(remainingRequests);
+					for (int j = i; j < responses.length; j++)
+						responses[j] = remainingResponses[j-i];
+					return responses;
+				} else if (response.getCode() == 200) {
+					responses[i] = response.getBody();
+				} else {
+					// TODO Make constants for these later if used anywhere else
+					// See: https://developers.facebook.com/docs/reference/api/errors/
+					JsonObject responseBody = new JsonObject(response.getBody());
+					if (!responseBody.has("error")) {
+						writeLog("Error: Facebook request failed without error (" + responseBody.toString() + "). Skipping request " + batchRequests[i].getRelativeUrl());
+						continue;
+					}
+					
+					JsonObject errorObj = responseBody.getJsonObject("error");
+					if (!errorObj.has("code")) {
+						writeLog("Error: Facebook request failed with code-less error (" + errorObj.toString() + ") (" + responseBody.toString() +").  Skipping request " + batchRequests[i].getRelativeUrl());
+						continue; // Skip	
+					}
+					int errorCode = errorObj.getInt("code");
+					if (errorCode == 190 	// OAuth
+					 || errorCode == 102	// API Session
+					) { 
+						writeLog("Error: Facebook request failed (OAuth).  Getting new access token and retrying...");
+						initializeFacebookClient();
+					} else if (/*errorCode == 1	// API Unknown
+							|| errorCode == 2	// API Service
+							|| */errorCode == 4	// API Too Many Calls
+							|| errorCode == 17  // API User Too Many Calls
+							|| errorCode == 613 // FQL Rate limit exceeded
+					) {
+						try {
+							writeLog("Error: Facebook request failed. Waiting a bit and then retrying...");
+							Thread.sleep(FacebookScraper.ERROR_SLEEP_MILLIS);
+						} catch (Exception e) {
+							writeLog("Error: Had too much trouble sleeping. Exiting...");
+							System.exit(0);
+						}
+					} else {
+						writeLog("Error: Facebook request failed for unknown reasons (Code: " + errorCode + ").  Skipping request " + batchRequests[i].getRelativeUrl());
+						continue; // Skip it
+					}
+					
+					String[] remainingRequests = Arrays.copyOfRange(requests, i, requests.length);
+					String[] remainingResponses = executeFacebookRequests(remainingRequests);
+					for (int j = i; j < responses.length; j++)
+						responses[j] = remainingResponses[j-i];
+							
+					return responses;
+				}
 			}
 		}
 		
