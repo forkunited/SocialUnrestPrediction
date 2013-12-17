@@ -51,7 +51,7 @@ public class FacebookScraper {
 	private static int MAX_PAGE_REQUESTS_PER_ITERATION = 50; //50 // Each query has 4 facebook requests
 	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 10; //50;
 	private static int MAX_ERROR_RETRIES = 5;
-	private static int ERROR_SLEEP_MILLIS = 1000;//1000*60*4; // 4 min
+	private static int ERROR_SLEEP_MILLIS = 1000*60*4; // 4 min
 	
 	public enum PageRequestType {
 		MAIN,
