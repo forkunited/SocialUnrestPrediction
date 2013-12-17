@@ -32,37 +32,102 @@ import com.restfb.json.JsonObject;
 import unrest.util.UnrestProperties;
 
 /**
- * FacebookScraper crawls over Facebook pages that like each other
+ * FacebookScraper crawls across the Facebook page "like" network, scraping and 
+ * storing page metadata, likes, feeds, and events using the RestFB (http://restfb.com/)
+ * library to connect to the Facebook Graph API.
  * 
- * Notes:
- * Page data contains: data returned from [id], [id]/likes, [id]/feed, [id]/events
- * Wanted to do the following:
- * 	- For each user who likes or comments on each post, get the user.	
- *	- For each user, get all liked and commented organizations
- *	- But each user likes usually returns [BLANK] due to privacy...
+ * Initially, we had intended this class to crawl from unrest group pages, to users
+ * who "like" those pages, to other pages that those users "like".  While it is possible
+ * to crawl from the pages to the users who "like" and comment on the pages, it is unfortunately
+ * not possible to crawl from users to pages that they "like"--user content is generally
+ * not accessible through the Graph API without the proper access token.
+ * (See the Graph API documentation at https://developers.facebook.com/docs/graph-api/ for more
+ * information.)
  * 
- * @author Bill
+ * Roughly, the "like" network traversed by FacebookScraper is a network of Facebook pages connected
+ * by "like" relationships (a "like" relationship occurs when one Facebook page "Facebook-likes" another).
+ * The more precise picture is more complicated, though, because each page consists of likes, events,
+ * and feed data which can be "paged" if there is a lot of it ("paged" in the sense that there are several
+ * separate "pages" of feed data on a given Facebook page, for example).  The FacebookScraper actually
+ * crawls across a network that consists of "like" relationships plus links between "paged" data on 
+ * a Facebook page.  To be more mathy, this network can be expressed as G=(V,E) where V=(F U M U N U L) and
+ * 
+ * F = {f_{pi} | f_{pi} is the ith "page" of feed on Facebook page p}
+ * M = {m_{pi} | m_{pi} is the ith "page" of meta-data on Facebook page p}
+ * N = {n_{pi} | n_{pi} is the ith "page" of events on Facebook page p}
+ * L = {l_{pi} | l_{pi} is the ith "page" of likes on Facebook page p}
+ * 
+ * For a Facebook page p, there are edges in E:
+ * 
+ * (f_{pi}, f_{p(i+1)}) between consecutive feed "pages" on Facebook page p
+ * (m_{pi}, m_{p(i+1)}) between consecutive meta-data "pages" on Facebook page p
+ * (n_{pi}, n_{p(i+1)}) between consecutive event "pages" on Facebook page p
+ * (l_{pi}, l_{p(i+1)}) between consecutive like "pages" on Facebook page p
+ * 
+ * Let E_p be the set of all of these edges between consecutive "pages" for all Facebook pages.
+ * 
+ * And there are also "like" edges.  The "like" edges representing the "like" relationship between pages p and p' are:
+ * 
+ * (l_{pi}, f_{p'0}) between the ith "like" "page" of p and the first feed "page" of p'.
+ * (l_{pi}, m_{p'0}) between the ith "like" "page" of p and first meta-data "page" of p'.
+ * (l_{pi}, n_{p'0}) between the ith "like" "page" of p and the first event "page" of p'.
+ * (l_{pi}, l_{p'0}) between the ith "like" "page" of p and the first "like" "page" of p'.
+ * 
+ * Let E_l be the set of all of these edges between like "pages" and other kinds of pages for all Facebook pages.
+ * 
+ * The FacebookScraper is initialized with an initial set of Facebook pages P_{seed}, and it maintains a list Q of
+ * nodes in the "like" network G defined above.  Q acts as a list of "pages" to request from the Facebook API in 
+ * batches.  Basically, the scraper repeatedly takes a bunch of nodes from the front of Q, sends Facebook requests 
+ * for them, stores the results of the requests, and updates Q to contain new nodes from G that were linked to 
+ * the nodes for which requests were just sent.  
+ * 
+ * More precisely, the scraper starts by adding V_{seed}=(F_{seed} U M_{seed} U N_{seed} U L_{seed}) to Q where
+ * F_{seed}={f_pi | p in P_{seed}}, and M_{seed}, N_{seed}, and L_{seed} are defined analogously. Then, while
+ * Q is non-empty, the scraper repeats iterations of:
+ * 
+ * 1. Remove the first n elements Q_n of Q.
+ * 2. For each element in Q_n, send a request, and stored the retrieved data.
+ * 3. For each edge (q, r) in E_p that is adjacent to an element q in Q_n, add r to the front of Q.
+ * 4. For each edge (q, r) in E_l that is adjacent to an element q in Q_n, add r to the back of Q.
+ * 
+ * Notice that step 3 adds consecutive "pages" to front of Q, and step 4 adds linked Facebook pages to the back
+ * of Q.  This allows the scraper to download all of the "pages" for large Facebook pages (pages with years and
+ * years of data) without getting stuck on them before traversing to other parts of the "like" network.
+ * 
+ * The scraper stores a separate file of scraped data for each iteration.  Each file contains a JSON object for
+ * every node in G for which it sent a request.  This means that the data for a single Facebook page can
+ * be spread across the several iterations' files.  
+ * 
+ * @author Bill McDowell
  *
  */
 
 public class FacebookScraper {
 	private static CharSequence FACEBOOK_IGNORE_URL = "https://graph.facebook.com/";
 	private static SimpleDateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static int MAX_PAGE_REQUESTS_PER_ITERATION = 50; //50 // Each query has 4 facebook requests
-	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 10; //50;
+	private static int MAX_PAGE_REQUESTS_PER_ITERATION = 50; //50;
+	private static int MAX_FACEBOOK_REQUESTS_PER_BATCH = 10; //50; // Changed this to 10 to get rid of weird HTTP 504 errors
 	private static int MAX_ERROR_RETRIES = 5;
 	private static int ERROR_SLEEP_MILLIS = 1000*60*4; // 4 min
 	
+	
+	// Types of requests to send to Facebook
 	public enum PageRequestType {
-		MAIN,
+		MAIN, // Meta-data
 		FEED,
 		LIKES,
 		EVENTS
 	}
 	
+	/*
+	 * Represents a request for a single "page" of data from a Facebook page
+	 */
 	public class PageRequest {
 		private String pageId;
 		private PageRequestType type;
+		
+		// All of these attributes are for paging data. Facebook uses various representations for "pages".
+		// Sometimes it uses "limit" and "until", and other times it uses "__paging_token" or "after"
 		private int limit;
 		private long until;
 		private String __paging_token;
@@ -210,6 +275,10 @@ public class FacebookScraper {
 		}
 	}
 	
+	/*
+	 *  Represents a response to a page request
+	 */
+	
 	public class PageResponse {
 		private JsonObject response;
 		private PageRequest sourceRequest;
@@ -278,12 +347,12 @@ public class FacebookScraper {
 	}
 	
 	private UnrestProperties properties;
-	private File logFile;
-	private File seedPageUrlsFile;
-	private File currentRequestsFile;
-	private File visitedPageIdsFile;
-	private File pageDataDir;
-	private File currentIterationFile;
+	private File logFile; // Stores logs of what the scraper has done and errors that it has encountered
+	private File seedPageUrlsFile; // URLs for seed Facebook pages
+	private File currentRequestsFile; // Hold requests that should be made to Facebook in the future (Q in the description above)
+	private File visitedPageIdsFile; // Holds Facebook ids of pages that have already been visited 
+	private File pageDataDir; // Stores files containing data retrieved from Facebook
+	private File currentIterationFile; // Stores the number of the current iteration
 	
 	private int maxThreads;
 	
@@ -304,6 +373,9 @@ public class FacebookScraper {
 		run(1);
 	}
 	
+	/*
+	 *  Main method... runs the scraper for the specified number of iterations
+	 */
 	public void run(int iterations) {
 		writeLog("Initializing...");
 		
@@ -376,7 +448,9 @@ public class FacebookScraper {
 		}
 	}
 	
-	
+	/*
+	 * Sends a batch of "page" requests
+	 */
 	private List<PageResponse> sendPageRequests(List<PageRequest> requests) {
 		writeLog("Setting up requests...");
 		List<PageResponse> responses = new ArrayList<PageResponse>();
@@ -397,6 +471,10 @@ public class FacebookScraper {
 		return responses;
 	}
 	
+	/*
+	 * The initial seed set of Facebook pages is given by their URLs.  This metho retrieves the Facebook ids for
+	 * this initial set, and builds requests using these ids
+	 */
 	private LinkedList<PageRequest> retrieveSeedRequests() {
 		Set<String> seedPageUrlSet = loadSeedPageUrls();
 		String[] seedPageUrls = new String[seedPageUrlSet.size()];
@@ -428,6 +506,16 @@ public class FacebookScraper {
 		return pageRequests;
 	}
 	
+	/*
+	 * Thread for sending a batch of requests to Facebook.  This is used by the "executeFacebookRequests"
+	 * method below to execute several batches of requests at the same time if there are too many requests
+	 * to send in a single batch.  However, this is somewhat useless now because Facebook seems like it
+	 * started giving HTTP 504 errors when receiving multiple batches at once.  In response to this,
+	 * executeFacebookRequests is now synchronized, so it only sends one batch at a time even if there
+	 * are multiple threads.  It might be good to experiment with this later to see if we can still possibly
+	 * send multiple batches at the same time and get rid of the 504 errors (the 504 errors didn't happen
+	 * at first for several months, but then they suddenly started occurring...)
+	 */
 	private class FacebookPartialRequestsThread implements Runnable {
 		private String[] requests;
 		private String[] responses;
@@ -460,6 +548,9 @@ public class FacebookScraper {
 		}
 	}
 	
+	/*
+	 * Executes a batch of Facebook requests
+	 */
 	private String[] executeFacebookRequests(String[] requests) {
 		if (requests.length > FacebookScraper.MAX_FACEBOOK_REQUESTS_PER_BATCH) {
 			ExecutorService threadPool = Executors.newFixedThreadPool(this.maxThreads);
