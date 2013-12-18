@@ -2,7 +2,7 @@
 
 . unrest.properties
 
-facebookTempDirPath="$facebookOutputDirPath/Temp"
+facebookTempDirPath="$facebookLocalOutputDirPath/Temp"
 facebookHdfsTempDirPath="$facebookHdfsOutputDirPath/Temp"
 facebookFeatureOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""Features"
 facebookDateLocationPostCountsOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""DateLocationPostCounts"
