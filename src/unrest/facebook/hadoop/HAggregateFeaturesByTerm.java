@@ -38,7 +38,7 @@ public class HAggregateFeaturesByTerm {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties();
+		private UnrestProperties properties = new UnrestProperties(true);
 		private LocationLanguageMap languageMap = new LocationLanguageMap(properties);
 		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
 		
@@ -66,7 +66,7 @@ public class HAggregateFeaturesByTerm {
 		private Text outKey = new Text();
 		private Text outValue = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties();
+		private UnrestProperties properties = new UnrestProperties(true);
 		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
 		public void reduce(Text key, Iterable<Text> values, Context context) throws JSONException, IOException, InterruptedException {
 			int totalCount = 0;
@@ -106,8 +106,11 @@ public class HAggregateFeaturesByTerm {
 		job.setReducerClass(AggregateFeaturesByTermReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

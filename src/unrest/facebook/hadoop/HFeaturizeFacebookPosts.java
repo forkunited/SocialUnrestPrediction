@@ -48,7 +48,7 @@ public class HFeaturizeFacebookPosts {
 	private static String languageFilter = null;
 	
 	protected static List<UnrestFeature> constructFeatures() {
-		UnrestProperties properties = new UnrestProperties();
+		UnrestProperties properties = new UnrestProperties(true);
 		Gazetteer unrestTerms = new Gazetteer("UnrestTermLarge", properties.getUnrestTermLargeGazetteerPath());
 		
 		UnrestFeature tom = new UnrestFeatureFutureDate(true);
@@ -74,7 +74,7 @@ public class HFeaturizeFacebookPosts {
 		private IntWritable value = new IntWritable();
 		
 		private List<UnrestFeature> features = constructFeatures();
-		private UnrestProperties properties = new UnrestProperties();
+		private UnrestProperties properties = new UnrestProperties(true);
 		private Gazetteer cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
 		private Gazetteer countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
 		private Gazetteer cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
@@ -234,8 +234,9 @@ public class HFeaturizeFacebookPosts {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		
 		if (otherArgs.length > 2)
 			languageFilter = otherArgs[2];

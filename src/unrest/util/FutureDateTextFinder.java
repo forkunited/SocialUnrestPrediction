@@ -11,6 +11,12 @@ import java.util.regex.Pattern;
 
 import edu.stanford.nlp.util.Pair;
 
+/**
+ * Detects mentions of future dates in a text
+ * 
+ * @author Bill McDowell (and BBN people)
+ *
+ */
 public class FutureDateTextFinder {
 	
 	private static Pattern tomorrowPattern = Pattern.compile("(?:ma.ana)|(?:amanh.)|(?:tomorrow)");

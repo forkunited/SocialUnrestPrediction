@@ -12,7 +12,7 @@ import com.restfb.json.JsonObject;
 
 public class SummarizeFacebookLocations {
 	public static void main(String[] args) {
-		UnrestProperties properties = new UnrestProperties();
+		UnrestProperties properties = new UnrestProperties(false);
 
 		File inputDir = new File(properties.getFacebookDataScrapeDirPath(), "PageData");
 		File[] dataFiles = inputDir.listFiles();

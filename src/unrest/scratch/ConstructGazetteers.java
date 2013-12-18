@@ -15,7 +15,7 @@ import unrest.util.UnrestProperties;
 import ark.util.FileUtil;
 
 public class ConstructGazetteers {
-	private static UnrestProperties properties = new UnrestProperties();
+	private static UnrestProperties properties = new UnrestProperties(false);
 	
 	public static void main(String[] args) throws IOException {
 		constructUnrestTermLarge();

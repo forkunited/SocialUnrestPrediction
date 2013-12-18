@@ -359,7 +359,7 @@ public class FacebookScraper {
 	private FacebookClient client;
 
 	public FacebookScraper() {
-		this.properties = new UnrestProperties();
+		this.properties = new UnrestProperties(false);
 		this.logFile = new File(this.properties.getFacebookDataScrapeDirPath(), "Log");
 		this.seedPageUrlsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "SeedPageUrls");
 		this.currentRequestsFile = new File(this.properties.getFacebookDataScrapeDirPath(), "CurrentRequests");

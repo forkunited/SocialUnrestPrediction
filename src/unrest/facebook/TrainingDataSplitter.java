@@ -36,7 +36,7 @@ public class TrainingDataSplitter {
 		validFeatures.add("handTom");
 		validFeatures.add("unigramTom");
 		
-		LocationLanguageMap languageMap = new LocationLanguageMap();
+		LocationLanguageMap languageMap = new LocationLanguageMap(false);
 		Map<String, Map<String, List<String>>> languageToFeatureToLines = new HashMap<String, Map<String, List<String>>>();
 		
 		try {

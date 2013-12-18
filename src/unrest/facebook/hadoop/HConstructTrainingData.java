@@ -53,7 +53,7 @@ public class HConstructTrainingData {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties();
+		private UnrestProperties properties = new UnrestProperties(true);
 		private LocationLanguageMap languageMap = new LocationLanguageMap(this.properties);
 		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
 
@@ -69,7 +69,7 @@ public class HConstructTrainingData {
 			int count = Integer.parseInt(lineParts[4]);
 			String language = this.languageMap.getLanguage(location);
 			if (!this.aggregates.containsKey(language))
-				this.aggregates.put(language, new AggregateTermMap(language));
+				this.aggregates.put(language, new AggregateTermMap(language, true));
 			AggregateTermMap aggregate = this.aggregates.get(language);
 			if (!aggregate.hasFeature(featureType, featureTerm))
 				return;
@@ -118,8 +118,11 @@ public class HConstructTrainingData {
 		job.setReducerClass(ConstructTrainingDataReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

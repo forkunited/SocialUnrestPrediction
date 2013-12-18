@@ -15,7 +15,7 @@ import unrest.util.LocationLanguageMap;
 public class EvaluateDetectedUnrestFacebook {
 	private static String languageFilter = "es";
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy");
-	private static LocationLanguageMap languageMap = new LocationLanguageMap();
+	private static LocationLanguageMap languageMap = new LocationLanguageMap(false);
 
 	public static void main(String[] args) {
 		String predictedUnrestFilter = args[0];

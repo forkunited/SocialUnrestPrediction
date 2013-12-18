@@ -40,8 +40,8 @@ public class HDetectUnrestFacebookPosts {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private DetectorBBN detector = new DetectorBBN();
-		private UnrestProperties properties = new UnrestProperties();
+		private DetectorBBN detector = new DetectorBBN(true);
+		private UnrestProperties properties = new UnrestProperties(true);
 		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
 		private Gazetteer cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
 		private Gazetteer countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
@@ -183,8 +183,9 @@ public class HDetectUnrestFacebookPosts {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}

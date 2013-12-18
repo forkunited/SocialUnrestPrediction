@@ -22,6 +22,7 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
 import unrest.twitter.JsonTweet;
+import unrest.util.UnrestProperties;
 import ark.util.StringUtil;
 
 public class HBBNDetectUsers {
@@ -30,7 +31,7 @@ public class HBBNDetectUsers {
 		private LongWritable userId = new LongWritable(0);
 		private Text predictionData = new Text();
 		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
-		private DetectorBBN unrestDetector = new DetectorBBN();
+		private DetectorBBN unrestDetector = new DetectorBBN(true);
 		private Calendar tweetDate = Calendar.getInstance();
 		
 		/*
@@ -107,8 +108,11 @@ public class HBBNDetectUsers {
 		job.setReducerClass(BBNDetectUsersReducer.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

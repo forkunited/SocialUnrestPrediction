@@ -19,6 +19,8 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import unrest.util.UnrestProperties;
+
 /**
  * Takes in a single Facebook data JSON object per line (from scraper), and outputs lines of the form:
  * 
@@ -140,8 +142,11 @@ public class HFilterFacebookDataToPosts {
 		job.setReducerClass(FilterFacebookDataToPostsReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
-		FileInputFormat.addInputPath(job, new Path(otherArgs[0]));
-		FileOutputFormat.setOutputPath(job, new Path(otherArgs[1]));
+		
+		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
+		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
+		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
 }

@@ -1,45 +1,34 @@
 package unrest.util;
 
+import java.io.File;
+
 import ark.util.ARKProperties;
 
 public class UnrestProperties extends ARKProperties {
-	/* Gazetteers From BBN for unrest.detector */
-	private String unrestTermGazetteerPath;
-	private String unrestLocationGazetteerPath;
+	public static String PROPERTIES_PATH = "unrest.properties";
 	
-	/* Gazetteers from previous Twitter logistic regression */
-	private String unrestTermLargeGazetteerPath;
-	private String cityGazetteerPath;
-	private String countryGazetteerPath;
-	private String cityCountryMapGazetteerPath;
-	private String locationLanguageMapGazetteerPath;
+	/* Path to Gazetteer directory */
+	private String gazetteerDirPath;
+
+	/* Paths to input, temporary, and output files of Facebook data featurizer */
+	private String facebookFileNamePrefix;
+	private String facebookOutputDirPath;
 	
-	/* Files for training unrest model on Facebook data */
-	private String facebookPostDateLocationTotalsPath;
-	private String facebookFeatureVocabPathPrefix;
-	private String facebookFeatureAggregatePathPrefix;
-	
+	/* Facebook scraper configuration */
 	private String facebookAppID;
 	private String facebookAppSecret;
 	private String facebookDataScrapeDirPath;
 	
 	private int maxThreads;
 	
-	public UnrestProperties() {
-		super(new String[] { "unrest.properties", "/user/wmcdowell/osi/Projects/SocialUnrestPrediction/unrest.properties"});
-			
-		this.unrestTermGazetteerPath = loadProperty("unrestTermGazetteerPath");
-		this.unrestLocationGazetteerPath = loadProperty("unrestLocationGazetteerPath");
+	public UnrestProperties(boolean useHdfs) {
+		// FIXME: Use environment variable for these 
+		super(new String[] { PROPERTIES_PATH });
 		
-		this.unrestTermLargeGazetteerPath = loadProperty("unrestTermLargeGazetteerPath");
-		this.cityGazetteerPath = loadProperty("cityGazetteerPath");
-		this.countryGazetteerPath = loadProperty("countryGazetteerPath");
-		this.cityCountryMapGazetteerPath = loadProperty("cityCountryMapGazetteerPath");
-		this.locationLanguageMapGazetteerPath = loadProperty("locationLanguageMapGazetteerPath");
+		this.gazetteerDirPath = (useHdfs) ? loadProperty("gazetteerHdfsDirPath") : loadProperty("gazetteerLocalDirPath");
 		
-		this.facebookPostDateLocationTotalsPath = loadProperty("facebookPostDateLocationTotalsPath");
-		this.facebookFeatureVocabPathPrefix = loadProperty("facebookFeatureVocabPathPrefix");
-		this.facebookFeatureAggregatePathPrefix = loadProperty("facebookFeatureAggregatePathPrefix");
+		this.facebookFileNamePrefix = loadProperty("facebookFileNamePrefix");
+		this.facebookOutputDirPath = (useHdfs) ? loadProperty("facebookHdfsOutputDirPath") : loadProperty("facebookLocalOutputDirPath");
 		
 		this.facebookAppID = loadProperty("facebookAppID");
 		this.facebookAppSecret = loadProperty("facebookAppSecret");
@@ -49,43 +38,43 @@ public class UnrestProperties extends ARKProperties {
 	}
 	
 	public String getUnrestTermGazetteerPath() {
-		return this.unrestTermGazetteerPath;
+		return (new File(this.gazetteerDirPath, "UnrestTerm.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getUnrestLocationGazetteerPath() {
-		return this.unrestLocationGazetteerPath;
+		return (new File(this.gazetteerDirPath, "UnrestLocation.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getUnrestTermLargeGazetteerPath() {
-		return this.unrestTermLargeGazetteerPath;
+		return (new File(this.gazetteerDirPath, "UnrestTermLarge.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getCityGazetteerPath() {
-		return this.cityGazetteerPath;
+		return (new File(this.gazetteerDirPath, "City.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getCountryGazetteerPath() {
-		return this.countryGazetteerPath;
+		return (new File(this.gazetteerDirPath, "Country.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getCityCountryMapGazetteerPath() {
-		return this.cityCountryMapGazetteerPath;
+		return (new File(this.gazetteerDirPath, "CityCountry.gazetteer")).getAbsolutePath();
 	}
 		
 	public String getLocationLanguageMapGazetteerPath() {
-		return this.locationLanguageMapGazetteerPath;
+		return (new File(this.gazetteerDirPath, "LocationLanguageMap.gazetteer")).getAbsolutePath();
 	}
 	
 	public String getFacebookPostDateLocationTotalsPath() {
-		return this.facebookPostDateLocationTotalsPath;
+		return (new File(this.facebookOutputDirPath, this.facebookFileNamePrefix + "DateLocationPostCounts")).getAbsolutePath();
 	}
 	
 	public String getFacebookFeatureVocabPathPrefix() {
-		return this.facebookFeatureVocabPathPrefix;
+		return (new File(this.facebookOutputDirPath, this.facebookFileNamePrefix + "TermAggregates.vocab")).getAbsolutePath();
 	}
 	
 	public String getFacebookFeatureAggregatePathPrefix() {
-		return this.facebookFeatureAggregatePathPrefix;
+		return (new File(this.facebookOutputDirPath, this.facebookFileNamePrefix + "TermAggregates.agg")).getAbsolutePath();
 	}
 				
 	public String getFacebookAppID() {

@@ -4,13 +4,19 @@ import java.util.List;
 
 import ark.data.Gazetteer;
 
+/**
+ * Maps cities and countries to languages
+ * 
+ * @author Bill McDowell
+ *
+ */
 public class LocationLanguageMap {
 	private UnrestProperties properties;
 	private Gazetteer cityCountryMapGazetteer;
 	private Gazetteer locationLanguageMapGazetteer;
 	
-	public LocationLanguageMap() {
-		this(new UnrestProperties());
+	public LocationLanguageMap(boolean useHdfs) {
+		this(new UnrestProperties(useHdfs));
 	}
 	
 	public LocationLanguageMap(UnrestProperties properties) {

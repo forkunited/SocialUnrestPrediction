@@ -143,8 +143,8 @@ public class SummarizeFacebookData {
 	
 	public static void main(String[] args) {
 		Map<String, FacebookPageSummary> summaries = new HashMap<String, FacebookPageSummary>();
-		DetectorBBN unrestDetector = new DetectorBBN();
-		UnrestProperties properties = new UnrestProperties();
+		DetectorBBN unrestDetector = new DetectorBBN(false);
+		UnrestProperties properties = new UnrestProperties(false);
 		File outputFile = new File(properties.getFacebookDataScrapeDirPath(), "FacebookDataSummary.tsv");
 		SummarizeFacebookData summarize = new SummarizeFacebookData();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
