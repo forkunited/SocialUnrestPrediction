@@ -59,7 +59,7 @@ of the project.
 It's okay to leave the "hdfs" properties blank if you aren't using any of the
 Hadoop parts of the project.
 
-4. Compile the project by running "ant". Build the jar by running ant build-jar. 
+4. Compile the project by running "ant". Build the jar by running "ant build-jar". 
 
 ### How to run the Facebook scraper ###
 
