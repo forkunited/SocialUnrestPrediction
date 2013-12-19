@@ -22,24 +22,33 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
 import unrest.twitter.JsonTweet;
+import unrest.util.UnrestProperties;
 import ark.util.StringUtil;
 
 public class HBBNDetectUsers {
 	
 	public static class BBNDetectUsersMapper extends Mapper<Object, Text, LongWritable, Text> {
-		private LongWritable userId = new LongWritable(0);
-		private Text predictionData = new Text();
-		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
-		private DetectorBBN unrestDetector = new DetectorBBN(true);
-		private Calendar tweetDate = Calendar.getInstance();
+		private LongWritable userId;
+		private Text predictionData;
+		private StringUtil.StringTransform cleanFn;
+		private DetectorBBN unrestDetector;
+		private Calendar tweetDate;
+		
+		public void setup(Context context) {
+			this.userId = new LongWritable(0);
+			this.predictionData = new Text();
+			this.cleanFn = StringUtil.getDefaultCleanFn();
+			this.unrestDetector = new DetectorBBN(new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH")));
+			this.tweetDate = Calendar.getInstance();
+		}
 		
 		/*
 		 * Skip badly gzip'd files
 		 */
 		public void run(Context context) throws InterruptedException {
 			try {
-				this.tweetDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 				setup(context);
+				this.tweetDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 				while (context.nextKeyValue()) {
 					map(context.getCurrentKey(), context.getCurrentValue(),
 							context);
@@ -99,6 +108,7 @@ public class HBBNDetectUsers {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HBBNDetectUsers");
 		job.setJarByClass(HBBNDetectUsers.class);
@@ -107,8 +117,7 @@ public class HBBNDetectUsers {
 		job.setReducerClass(BBNDetectUsersReducer.class);
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
-		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
+
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		

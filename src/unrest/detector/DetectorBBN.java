@@ -5,10 +5,8 @@ import ark.util.StringUtil;
 import unrest.util.UnrestProperties;
 
 public class DetectorBBN extends DetectorConjunction {
-	public DetectorBBN(boolean useHdfs) {
+	public DetectorBBN(UnrestProperties properties) {
 		super();
-	
-		UnrestProperties properties = new UnrestProperties(useHdfs);
 		
 		Gazetteer unrestTermGazetteer = new Gazetteer("UnrestTerm", properties.getUnrestTermGazetteerPath(), StringUtil.getDefaultCleanFn());
 		Gazetteer unrestLocationGazetteer = new Gazetteer("UnrestLocation", properties.getUnrestLocationGazetteerPath(), StringUtil.getDefaultCleanFn());

@@ -38,9 +38,15 @@ public class HAggregateFeaturesByTerm {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties(true);
-		private LocationLanguageMap languageMap = new LocationLanguageMap(properties);
-		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		private UnrestProperties properties;
+		private LocationLanguageMap languageMap;
+		private AggregateDateLocationMap dateLocationPostTotals;
+		
+		public void setup(Context context) {
+			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			this.languageMap = new LocationLanguageMap(this.properties);
+			this.dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		}
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String line = value.toString();
@@ -66,8 +72,14 @@ public class HAggregateFeaturesByTerm {
 		private Text outKey = new Text();
 		private Text outValue = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties(true);
-		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		private UnrestProperties properties;
+		private AggregateDateLocationMap dateLocationPostTotals;
+		
+		public void setup(Context context) {
+			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			this.dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		}
+		
 		public void reduce(Text key, Iterable<Text> values, Context context) throws JSONException, IOException, InterruptedException {
 			int totalCount = 0;
 			double totalFreq = 0;
@@ -99,6 +111,7 @@ public class HAggregateFeaturesByTerm {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HAggregateFeaturesByTerm");
 		job.setJarByClass(HAggregateFeaturesByTerm.class);

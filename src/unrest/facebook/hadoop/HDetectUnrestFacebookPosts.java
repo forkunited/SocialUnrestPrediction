@@ -40,15 +40,27 @@ public class HDetectUnrestFacebookPosts {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private DetectorBBN detector = new DetectorBBN(true);
-		private UnrestProperties properties = new UnrestProperties(true);
-		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
-		private Gazetteer cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
-		private Gazetteer countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
-		private Gazetteer cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
-		private SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
-		private SimpleDateFormat outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
-		private Calendar date = Calendar.getInstance();
+		private DetectorBBN detector;
+		private UnrestProperties properties;
+		private StringUtil.StringTransform cleanFn;
+		private Gazetteer cityGazetteer;
+		private Gazetteer countryGazetteer;
+		private Gazetteer cityCountryMapGazetteer;
+		private SimpleDateFormat inputDateFormat;
+		private SimpleDateFormat outputDateFormat;
+		private Calendar date;
+		
+		public void setup(Context context) {
+			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			this.detector = new DetectorBBN(this.properties);
+			this.cleanFn = StringUtil.getDefaultCleanFn();
+			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
+			this.countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
+			this.cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
+			this.inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
+			this.outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
+			this.date = Calendar.getInstance();
+		}
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String line = value.toString();
@@ -174,6 +186,7 @@ public class HDetectUnrestFacebookPosts {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HDetectUnrestFacebookPosts");
 		job.setJarByClass(HDetectUnrestFacebookPosts.class);
@@ -183,7 +196,6 @@ public class HDetectUnrestFacebookPosts {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		

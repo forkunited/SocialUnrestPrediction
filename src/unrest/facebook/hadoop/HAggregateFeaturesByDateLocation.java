@@ -71,6 +71,7 @@ public class HAggregateFeaturesByDateLocation {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HAggregateFeaturesByDateLocation");
 		job.setJarByClass(HAggregateFeaturesByDateLocation.class);
@@ -80,7 +81,6 @@ public class HAggregateFeaturesByDateLocation {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);

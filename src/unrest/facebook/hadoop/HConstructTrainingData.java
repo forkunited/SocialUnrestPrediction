@@ -53,12 +53,18 @@ public class HConstructTrainingData {
 		private Text key = new Text();
 		private Text value = new Text();
 		
-		private UnrestProperties properties = new UnrestProperties(true);
-		private LocationLanguageMap languageMap = new LocationLanguageMap(this.properties);
-		private AggregateDateLocationMap dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		private UnrestProperties properties;
+		private LocationLanguageMap languageMap;
+		private AggregateDateLocationMap dateLocationPostTotals;
 
 		private Map<String, AggregateTermMap> aggregates = new HashMap<String, AggregateTermMap>();
 
+		public void setup(Context context) {
+			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			this.languageMap = new LocationLanguageMap(this.properties);
+			this.dateLocationPostTotals = new AggregateDateLocationMap(this.properties.getFacebookPostDateLocationTotalsPath());
+		}
+		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String[] lineParts = value.toString().split("\\t");
 			
@@ -110,6 +116,7 @@ public class HConstructTrainingData {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HConstructTrainingData");
 		job.setJarByClass(HConstructTrainingData.class);
@@ -119,7 +126,6 @@ public class HConstructTrainingData {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		

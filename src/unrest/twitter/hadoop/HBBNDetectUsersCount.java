@@ -21,24 +21,33 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
 import unrest.twitter.JsonTweet;
+import unrest.util.UnrestProperties;
 import ark.util.StringUtil;
 
 public class HBBNDetectUsersCount {
 	
 	public static class BBNDetectUsersCountMapper extends Mapper<Object, Text, LongWritable, IntWritable> {
-		private LongWritable userId = new LongWritable(0);
-		private IntWritable one = new IntWritable(1);
-		private StringUtil.StringTransform cleanFn = StringUtil.getDefaultCleanFn();
-		private DetectorBBN unrestDetector = new DetectorBBN(true);
-		private Calendar tweetDate = Calendar.getInstance();
+		private LongWritable userId;
+		private IntWritable one;
+		private StringUtil.StringTransform cleanFn;
+		private DetectorBBN unrestDetector;
+		private Calendar tweetDate;
+		
+		public void setup(Context context) {
+			this.userId = new LongWritable(0);
+			this.one = new IntWritable(1);
+			this.cleanFn = StringUtil.getDefaultCleanFn();
+			this.unrestDetector = new DetectorBBN(new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH")));
+			this.tweetDate = Calendar.getInstance();
+		}
 		
 		/*
 		 * Skip badly gzip'd files
 		 */
 		public void run(Context context) throws InterruptedException {
 			try {
-				this.tweetDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 				setup(context);
+				this.tweetDate.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 				while (context.nextKeyValue()) {
 					map(context.getCurrentKey(), context.getCurrentValue(),
 							context);
@@ -88,6 +97,7 @@ public class HBBNDetectUsersCount {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HBBNDetectUsersCount");
 		job.setJarByClass(HBBNDetectUsers.class);
@@ -97,7 +107,6 @@ public class HBBNDetectUsersCount {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		
