@@ -79,9 +79,9 @@ unrest.facebook.hadoop to produce a bunch of feature files required by the logis
 
 Run the classes under unrest.twitter.hadoop using the commands:
 
-hadoop jar Unrest.jar unrest.twitter.hadoop.HBBNDetectUsers [HDFS unrest.properties location] [input file] [output file]
+	hadoop jar Unrest.jar unrest.twitter.hadoop.HBBNDetectUsers [HDFS unrest.properties location] [input file] [output file]
 
-hadoop jar Unrest.jar unrest.twitter.hadoop.HBBNDetectUsersCount [HDFS unrest.properties location] [input file] [output file]
+	hadoop jar Unrest.jar unrest.twitter.hadoop.HBBNDetectUsersCount [HDFS unrest.properties location] [input file] [output file]
 
 The first command runs a Hadoop job to produce lists of unrest posts for each 
 Twitter account, and the second command runs a Hadoop job to produce counts 
