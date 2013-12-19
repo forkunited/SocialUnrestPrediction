@@ -107,7 +107,7 @@ public class HAggregateFeaturesByTerm {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
 		
-		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		

@@ -17,7 +17,6 @@ import org.apache.hadoop.util.GenericOptionsParser;
 
 import unrest.feature.UnrestFeature;
 import unrest.feature.UnrestFeatureTotal;
-import unrest.util.UnrestProperties;
 
 /**
  * Takes in lines output from HFeaturizeFacebookPosts of the form:
@@ -81,7 +80,7 @@ public class HAggregateFeaturesByDateLocation {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		System.exit(job.waitForCompletion(true) ? 0 : 1);

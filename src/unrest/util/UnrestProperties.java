@@ -5,7 +5,6 @@ import java.io.File;
 import ark.util.ARKProperties;
 
 public class UnrestProperties extends ARKProperties {
-	public static String PROPERTIES_PATH = "unrest.properties";
 	
 	/* Path to Gazetteer directory */
 	private String gazetteerDirPath;
@@ -22,8 +21,11 @@ public class UnrestProperties extends ARKProperties {
 	private int maxThreads;
 	
 	public UnrestProperties(boolean useHdfs) {
-		// FIXME: Use environment variable for these 
-		super(new String[] { PROPERTIES_PATH });
+		this(useHdfs, "unrest.properties");
+	}
+	
+	public UnrestProperties(boolean useHdfs, String propertiesPath) {
+		super(new String[] { propertiesPath });
 		
 		this.gazetteerDirPath = (useHdfs) ? loadProperty("gazetteerHdfsDirPath") : loadProperty("gazetteerLocalDirPath");
 		

@@ -22,7 +22,6 @@ import org.apache.hadoop.util.GenericOptionsParser;
 import unrest.detector.Detector;
 import unrest.detector.DetectorBBN;
 import unrest.twitter.JsonTweet;
-import unrest.util.UnrestProperties;
 import ark.util.StringUtil;
 
 public class HBBNDetectUsers {
@@ -109,7 +108,7 @@ public class HBBNDetectUsers {
 		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
 		
-		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		

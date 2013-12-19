@@ -73,15 +73,27 @@ public class HFeaturizeFacebookPosts {
 		private Text key = new Text();
 		private IntWritable value = new IntWritable();
 		
-		private List<UnrestFeature> features = constructFeatures();
-		private UnrestProperties properties = new UnrestProperties(true);
-		private Gazetteer cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
-		private Gazetteer countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
-		private Gazetteer cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
-		private Gazetteer locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
-		private SimpleDateFormat inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
-		private SimpleDateFormat outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
-		private Calendar date = Calendar.getInstance();
+		private List<UnrestFeature> features;
+		private UnrestProperties properties; 
+		private Gazetteer cityGazetteer; 
+		private Gazetteer countryGazetteer; 
+		private Gazetteer cityCountryMapGazetteer; 
+		private Gazetteer locationLanguageMapGazetteer;
+		private SimpleDateFormat inputDateFormat; 
+		private SimpleDateFormat outputDateFormat; 
+		private Calendar date; 
+		
+		public void setup(Context context) {
+			this.features = constructFeatures();
+			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
+			this.countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
+			this.cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
+			this.locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
+			this.inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
+			this.outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
+			this.date = Calendar.getInstance();
+		}
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 			String line = value.toString();
@@ -234,12 +246,12 @@ public class HFeaturizeFacebookPosts {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		UnrestProperties.PROPERTIES_PATH = otherArgs[0];
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		
-		if (otherArgs.length > 2)
-			languageFilter = otherArgs[2];
+		if (otherArgs.length > 3)
+			languageFilter = otherArgs[3];
 		
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
