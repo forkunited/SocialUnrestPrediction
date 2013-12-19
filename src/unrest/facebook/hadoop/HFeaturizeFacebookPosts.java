@@ -47,28 +47,6 @@ import unrest.util.UnrestProperties;
 public class HFeaturizeFacebookPosts {
 	private static String languageFilter = null;
 	
-	protected static List<UnrestFeature> constructFeatures() {
-		UnrestProperties properties = new UnrestProperties(true);
-		Gazetteer unrestTerms = new Gazetteer("UnrestTermLarge", properties.getUnrestTermLargeGazetteerPath());
-		
-		UnrestFeature tom = new UnrestFeatureFutureDate(true);
-		
-		UnrestFeature total = new UnrestFeatureTotal();
-		UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
-		UnrestFeature unigram = new UnrestFeatureUnigram();
-		UnrestFeature handTom = new UnrestFeatureConjunction("handTom", hand, tom);
-		UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", unigram, tom);
-		
-		List<UnrestFeature> features = new ArrayList<UnrestFeature>();
-		features.add(total);
-		features.add(hand);
-		features.add(unigram);
-		features.add(handTom);
-		features.add(unigramTom);
-		
-		return features;
-	}
-	
 	public static class FeaturizeFacebookPostsMapper extends Mapper<Object, Text, Text, IntWritable> {
 		private Text key = new Text();
 		private IntWritable value = new IntWritable();
@@ -83,9 +61,32 @@ public class HFeaturizeFacebookPosts {
 		private SimpleDateFormat outputDateFormat; 
 		private Calendar date; 
 		
+		protected List<UnrestFeature> constructFeatures(String propertiesPath) {
+			UnrestProperties properties = new UnrestProperties(true, propertiesPath);
+			Gazetteer unrestTerms = new Gazetteer("UnrestTermLarge", properties.getUnrestTermLargeGazetteerPath());
+			
+			UnrestFeature tom = new UnrestFeatureFutureDate(true);
+			
+			UnrestFeature total = new UnrestFeatureTotal();
+			UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
+			UnrestFeature unigram = new UnrestFeatureUnigram();
+			UnrestFeature handTom = new UnrestFeatureConjunction("handTom", hand, tom);
+			UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", unigram, tom);
+			
+			List<UnrestFeature> features = new ArrayList<UnrestFeature>();
+			features.add(total);
+			features.add(hand);
+			features.add(unigram);
+			features.add(handTom);
+			features.add(unigramTom);
+			
+			return features;
+		}
+		
 		public void setup(Context context) {
-			this.features = constructFeatures();
-			this.properties = new UnrestProperties(true, context.getConfiguration().get("PROPERTIES_PATH"));
+			String propertiesPath = context.getConfiguration().get("PROPERTIES_PATH");
+			this.features = constructFeatures(propertiesPath);
+			this.properties = new UnrestProperties(true, propertiesPath);
 			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
 			this.countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
 			this.cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
