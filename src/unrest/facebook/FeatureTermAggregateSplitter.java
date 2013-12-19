@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import unrest.util.UnrestProperties;
+
 /**
  * Takes in a document containing lines of the form:
  * 
@@ -32,6 +34,8 @@ public class FeatureTermAggregateSplitter {
 		String featureVocabOutputPathPrefix = args[1];
 		String featureAggregateOutputPathPrefix = args[2];
 		
+		UnrestProperties properties = new UnrestProperties(false);
+		
 		int N = 25000;
 		if (args.length > 3)
 			N = Integer.parseInt(args[3]);
@@ -50,7 +54,7 @@ public class FeatureTermAggregateSplitter {
 				int count = Integer.parseInt(lineParts[5]);
 				
 				if (!termMaps.containsKey(language))
-					termMaps.put(language, new AggregateTermMap(language, false));
+					termMaps.put(language, new AggregateTermMap(language, properties));
 				termMaps.get(language).addAggregates(featureType, featureTerm, mean, sd, count);
 			}
 			

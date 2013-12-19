@@ -47,16 +47,18 @@ public class AggregateTermMap {
 	
 	private String language;
 	private Map<String, Map<String, Aggregates>> aggregateMap;
+	private UnrestProperties properties;
 	
-	public AggregateTermMap(String language, boolean useHdfs) {
-		this(language, true, useHdfs);
+	public AggregateTermMap(String language, UnrestProperties properties) {
+		this(language, true, properties);
 	}
 	
-	public AggregateTermMap(String language, boolean loadFromFile, boolean useHdfs) {
+	public AggregateTermMap(String language, boolean loadFromFile, UnrestProperties properties) {
 		this.language = language;
 		this.aggregateMap = new HashMap<String, Map<String, Aggregates>>();
+		this.properties = properties;
 		if (loadFromFile)
-			load(useHdfs);
+			load();
 	}
 	
 	public boolean hasFeature(String featureType, String featureTerm) {
@@ -139,9 +141,8 @@ public class AggregateTermMap {
 		}
 	}
 	
-	private void load(boolean useHdfs) {
+	private void load() {
 		try {
-			UnrestProperties properties = new UnrestProperties(useHdfs);
 			BufferedReader br = FileUtil.getFileReader(properties.getFacebookFeatureAggregatePathPrefix() + "." + this.language);
 			
 			String line = null;

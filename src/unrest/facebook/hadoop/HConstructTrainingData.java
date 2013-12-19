@@ -75,7 +75,7 @@ public class HConstructTrainingData {
 			int count = Integer.parseInt(lineParts[4]);
 			String language = this.languageMap.getLanguage(location);
 			if (!this.aggregates.containsKey(language))
-				this.aggregates.put(language, new AggregateTermMap(language, true));
+				this.aggregates.put(language, new AggregateTermMap(language, this.properties));
 			AggregateTermMap aggregate = this.aggregates.get(language);
 			if (!aggregate.hasFeature(featureType, featureTerm))
 				return;
