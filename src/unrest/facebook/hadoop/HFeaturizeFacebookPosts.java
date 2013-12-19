@@ -85,11 +85,6 @@ public class HFeaturizeFacebookPosts {
 		
 		public void setup(Context context) {
 			String propertiesPath = context.getConfiguration().get("PROPERTIES_PATH");
-			if (propertiesPath == null)
-				throw new NullPointerException("Error: Properties file path not set.");
-			else 
-				throw new NullPointerException(propertiesPath);
-			/*
 			this.features = constructFeatures(propertiesPath);
 			this.properties = new UnrestProperties(true, propertiesPath);
 			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
@@ -98,7 +93,7 @@ public class HFeaturizeFacebookPosts {
 			this.locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
 			this.inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
 			this.outputDateFormat = new SimpleDateFormat("MM-dd-yyyy");
-			this.date = Calendar.getInstance();*/
+			this.date = Calendar.getInstance();
 		}
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
