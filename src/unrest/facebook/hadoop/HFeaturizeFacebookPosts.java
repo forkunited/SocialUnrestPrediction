@@ -85,6 +85,8 @@ public class HFeaturizeFacebookPosts {
 		
 		public void setup(Context context) {
 			String propertiesPath = context.getConfiguration().get("PROPERTIES_PATH");
+			if (propertiesPath == null)
+				throw new NullPointerException("Error: Properties file path not set.");
 			this.features = constructFeatures(propertiesPath);
 			this.properties = new UnrestProperties(true, propertiesPath);
 			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
@@ -238,6 +240,7 @@ public class HFeaturizeFacebookPosts {
 	public static void main(String[] args) throws Exception {
 		Configuration conf = new Configuration();
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
+		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
 		Job job = new Job(conf, "HFeaturizeFacebookPosts");
 		job.setJarByClass(HFeaturizeFacebookPosts.class);
@@ -247,7 +250,7 @@ public class HFeaturizeFacebookPosts {
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(IntWritable.class);
 		
-		conf.set("PROPERTIES_PATH", otherArgs[0]);
+		
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));
 		
