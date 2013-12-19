@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Using properties file: $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES"
+
 . unrest.properties
 
 facebookTempDirPath="$facebookLocalOutputDirPath/Temp"

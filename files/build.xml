@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="SocialUnrestPrediction">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <path id="SocialUnrestPrediction.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="[lib directory]/ark-water.jar"/>
+        <pathelement location="[lib directory]/restfb-1.6.12.jar"/>
+        <pathelement location="[lib directory]/stanford-corenlp-1.3.5.jar"/>
+        <pathelement location="[lib directory]/Jars/stanford-corenlp-1.3.5-sources.jar"/>
+        <pathelement location="[lib directory]/Jars/json-lib-2.4-jdk15.jar"/>
+        <pathelement location="[lib directory]/Jars/ezmorph-1.0.6.jar"/>
+        <pathelement location="[lib directory]/Jars/hadoop-common-2.2.0.jar"/>
+        <pathelement location="[lib directory]/Jars/hadoop-mapreduce-client-common-2.2.0.jar"/>
+        <pathelement location="[lib directory]/Jars/hadoop-mapreduce-client-core-2.2.0.jar"/>
+        <pathelement location="[lib directory]/Jars/commons-net-3.1.jar"/>
+        <pathelement location="[lib directory]/Jars/commons-lang-2.5.jar"/>
+        <pathelement location="[lib directory]/Jars/commons-cli-1.2.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="ConstructGazetteers">
+        <java classname="unrest.scratch.ConstructGazetteers" failonerror="true" fork="yes">
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+        </java>
+    </target>
+    <target name="RunFacebookScraper">
+        <java classname="unrest.scratch.RunFacebookScraper" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx3G -XX:+UseParallelGC -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+            <arg value="${iterations}"/>
+        </java>
+    </target>
+    <target name="SummarizeFacebookData">
+        <java classname="unrest.scratch.SummarizeFacebookData" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+        </java>
+    </target>
+    <target name="SummarizeFacebookLocations">
+        <java classname="unrest.scratch.SummarizeFacebookLocations" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+        </java>
+    </target>
+    <target name="EvaluateDetectedUnrestFacebook">
+        <java classname="unrest.scratch.EvaluateDetectedUnrestFacebook" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx2G -XX:+UseParallelGC -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+            <arg value="${predictedUnrestFilter}"/>
+            <arg value="${actualUnrestPath}"/>
+            <arg value="${predictedUnrestPath}"/>
+            <arg value="${minDate}"/>
+            <arg value="${maxDate}"/>
+        </java>
+    </target>
+    <target name="build-jar">
+      <jar destfile="Unrest.jar"
+           basedir="bin">
+        <zipgroupfileset dir="[lib directory]" includes="*.jar"/>
+      </jar>
+    </target>
+</project>
+	
+
