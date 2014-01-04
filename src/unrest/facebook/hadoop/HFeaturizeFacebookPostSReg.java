@@ -105,9 +105,9 @@ public class HFeaturizeFacebookPostSReg {
 		
 		public void setup(Context context) {
 			String propertiesPath = context.getConfiguration().get("PROPERTIES_PATH");
-			UnrestProperties properties = new UnrestProperties(true, propertiesPath);
-			this.features = constructFeatures(properties);
-			this.sentenceFeatures = constructSentenceFeatures(properties);
+			this.properties = new UnrestProperties(true, propertiesPath);
+			this.features = constructFeatures(this.properties);
+			this.sentenceFeatures = constructSentenceFeatures(this.properties);
 			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
 			this.countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
 			this.cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
