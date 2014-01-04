@@ -19,12 +19,13 @@ public class UnrestFeatureUnigram extends UnrestFeature {
 	}
 
 	@Override
-	public Map<String, Integer> compute(String text, Calendar textTime) {
+	public Map<String, Integer> compute(String text, Calendar textTime, String location) {
 		Map<String, Integer> values = new HashMap<String, Integer>();
 		String[] tokens = this.cleanFn.transform(text).split("\\s+");
 		
 		for (int i = 0; i < tokens.length; i++) {
-			values.put(tokens[i], 1);
+			if (tokens[i].length() > 0)
+				values.put(tokens[i], 1);
 		}
 		
 		return values;

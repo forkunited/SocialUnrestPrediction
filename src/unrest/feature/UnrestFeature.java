@@ -5,9 +5,9 @@ import java.util.Map;
 
 public abstract class UnrestFeature {
 	public abstract String getName();
-	public abstract Map<String, Integer> compute(String text, Calendar textTime);
+	public abstract Map<String, Integer> compute(String text, Calendar textTime, String location);
 	
 	public Map<String, Integer> compute(String text) {
-		return compute(text, null);
+		return compute(text, null, null);
 	}
 }

@@ -27,7 +27,7 @@ public class UnrestFeatureFutureDate extends UnrestFeature {
 	}
 
 	@Override
-	public Map<String, Integer> compute(String text, Calendar textTime) {
+	public Map<String, Integer> compute(String text, Calendar textTime, String location) {
 		Map<String, Integer> values = new TreeMap<String, Integer>();
 		String cleanText = this.cleanFn.transform(text);
 		

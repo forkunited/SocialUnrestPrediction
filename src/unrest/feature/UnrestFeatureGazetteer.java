@@ -27,7 +27,7 @@ public class UnrestFeatureGazetteer extends UnrestFeature {
 	}
 
 	@Override
-	public Map<String, Integer> compute(String text, Calendar textTime) {
+	public Map<String, Integer> compute(String text, Calendar textTime, String location) {
 		Map<String, Integer> values = new HashMap<String, Integer>(this.gazetteerValues.size());
 		String cleanText = this.cleanFn.transform(text);
 		for (String gazetteerValue : this.gazetteerValues) {

@@ -7,6 +7,7 @@ echo "Using properties file: $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES"
 facebookTempDirPath="$facebookLocalOutputDirPath/Temp"
 facebookHdfsTempDirPath="$facebookHdfsOutputDirPath/Temp"
 facebookFeatureOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""Features"
+facebookFeatureSRegOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""FeatureSReg"
 facebookDateLocationPostCountsOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""DateLocationPostCounts"
 facebookTermAggregatesOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""TermAggregates"
 facebookTrainingDataOutputPath="$facebookLocalOutputDirPath/$facebookFileNamePrefix""TrainingData"
@@ -27,6 +28,15 @@ hadoop jar Unrest.jar unrest.facebook.hadoop.HFilterFacebookDataToPosts -D mapre
 #rm -rf $facebookTempDirPath/*
 #hadoop dfs -copyToLocal $facebookHdfsTempDirPath/Features/part-r-* $facebookTempDirPath
 #cat $facebookTempDirPath/part-r-* > $facebookFeatureOutputPath
+
+# Featurize posts for sentence regularizer
+#hadoop dfs -rmr $facebookHdfsTempDirPath/FeatureSReg
+#hadoop jar Unrest.jar unrest.facebook.hadoop.HFeaturizeFacebookPostSReg -D mapred.reduce.tasks=170 $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES $facebookHdfsTempDirPath/Posts/part-r-* $facebookHdfsTempDirPath/FeatureSReg
+
+# Copy sentence-regularization featurized posts to local file system
+#rm -rf $facebookTempDirPath/*
+#hadoop dfs -copyToLocal $facebookHdfsTempDirPath/FeatureSReg/part-r-* $facebookTempDirPath
+#cat $facebookTempDirPath/part-r-* > $facebookFeatureSRegOutputPath
 
 # Count number of posts per date/location
 #hadoop dfs -rmr $facebookHdfsTempDirPath/DateLocationPostCounts

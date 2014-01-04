@@ -70,7 +70,7 @@ public class Scratch {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		Map<String, Integer> values = unigramTom.compute("10 de abril protesta", c);
+		Map<String, Integer> values = unigramTom.compute("10 de abril protesta", c, null);
 		for (Entry<String, Integer> entry : values.entrySet()) {
 			System.out.println(entry.getKey() + ": " + entry.getValue());
 		}

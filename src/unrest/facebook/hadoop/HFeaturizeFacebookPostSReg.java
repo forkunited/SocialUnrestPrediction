@@ -1,19 +1,22 @@
 package unrest.facebook.hadoop;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import net.sf.json.JSONObject;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -22,15 +25,17 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import ark.data.Gazetteer;
+import edu.stanford.nlp.ling.HasWord;
+import edu.stanford.nlp.process.DocumentPreprocessor;
 
 import unrest.feature.UnrestFeature;
 import unrest.feature.UnrestFeatureConjunction;
+import unrest.feature.UnrestFeatureFixedEffects;
 import unrest.feature.UnrestFeatureFutureDate;
 import unrest.feature.UnrestFeatureGazetteer;
-import unrest.feature.UnrestFeatureTotal;
 import unrest.feature.UnrestFeatureUnigram;
 import unrest.util.UnrestProperties;
+import ark.data.Gazetteer;
 
 /**
  * Takes in lines output from HFilterFacebookDataToPosts of the form:
@@ -39,19 +44,27 @@ import unrest.util.UnrestProperties;
  * 
  * And outputs lines of the form:
  * 
- * [Date]	[Feature Type]	[Location]	[Feature Term]	[Count]
+ * [Date]_[Location]	{{"s_0":{"[f_00]":[v_01], "[f_01]":[v_01],...}, "[s_1]":{"[f_10]":v_10,"[f_11]":v_11,...}...}
  * 
- * This output can be used as one of the inputs to David's social unrest prediction 
- * tool (prediction, but not training).
+ * The JSON object stores values of features calculated per sentence within 
+ * nested JSON objects with keys s_i. The JSON object for s_0 stores values 
+ * of features that are aggregated across all sentences (s_0 is a fake 
+ * sentence). These features are aggregated across all sentences because it 
+ * doesn't make sense to regularize them out by sentence.
+ * 
+ * The output can be used as one of the inputs to Dani's sentence regularizing
+ * model.
  */
-public class HFeaturizeFacebookPosts {
-	private static String languageFilter = null;
+public class HFeaturizeFacebookPostSReg {
+	private static String languageFilter = "es";
+	private static boolean outputByCity = false;
 	
-	public static class FeaturizeFacebookPostsMapper extends Mapper<Object, Text, Text, IntWritable> {
+	public static class FeaturizeFacebookPostSRegMapper extends Mapper<Object, Text, Text, Text> {
 		private Text key = new Text();
-		private IntWritable value = new IntWritable();
+		private Text value = new Text();
 		
 		private List<UnrestFeature> features;
+		private List<UnrestFeature> sentenceFeatures;
 		private UnrestProperties properties; 
 		private Gazetteer cityGazetteer; 
 		private Gazetteer countryGazetteer; 
@@ -61,32 +74,40 @@ public class HFeaturizeFacebookPosts {
 		private SimpleDateFormat outputDateFormat; 
 		private Calendar date; 
 		
-		protected List<UnrestFeature> constructFeatures(String propertiesPath) {
-			UnrestProperties properties = new UnrestProperties(true, propertiesPath);
+		protected List<UnrestFeature> constructFeatures(UnrestProperties properties) {
 			Gazetteer unrestTerms = new Gazetteer("UnrestTermLarge", properties.getUnrestTermLargeGazetteerPath());
 			
-			UnrestFeature tom = new UnrestFeatureFutureDate(true);
-			
-			UnrestFeature total = new UnrestFeatureTotal();
-			UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
 			UnrestFeature unigram = new UnrestFeatureUnigram();
+			UnrestFeature tom = new UnrestFeatureFutureDate(true);
+			UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
 			UnrestFeature handTom = new UnrestFeatureConjunction("handTom", hand, tom);
 			UnrestFeature unigramTom = new UnrestFeatureConjunction("unigramTom", unigram, tom);
+			UnrestFeature fixedEffects = new UnrestFeatureFixedEffects();
 			
 			List<UnrestFeature> features = new ArrayList<UnrestFeature>();
-			features.add(total);
+			
 			features.add(hand);
-			features.add(unigram);
 			features.add(handTom);
 			features.add(unigramTom);
+			features.add(fixedEffects);
+			
+			return features;
+		}
+		
+		protected List<UnrestFeature> constructSentenceFeatures(UnrestProperties properties) {
+			UnrestFeature unigram = new UnrestFeatureUnigram();
+			List<UnrestFeature> features = new ArrayList<UnrestFeature>();
+			
+			features.add(unigram);
 			
 			return features;
 		}
 		
 		public void setup(Context context) {
 			String propertiesPath = context.getConfiguration().get("PROPERTIES_PATH");
-			this.features = constructFeatures(propertiesPath);
-			this.properties = new UnrestProperties(true, propertiesPath);
+			UnrestProperties properties = new UnrestProperties(true, propertiesPath);
+			this.features = constructFeatures(properties);
+			this.sentenceFeatures = constructSentenceFeatures(properties);
 			this.cityGazetteer = new Gazetteer("City", this.properties.getCityGazetteerPath());
 			this.countryGazetteer = new Gazetteer("Country", this.properties.getCountryGazetteerPath());
 			this.cityCountryMapGazetteer = new Gazetteer("CityCountryMap", this.properties.getCityCountryMapGazetteerPath());
@@ -106,6 +127,7 @@ public class HFeaturizeFacebookPosts {
 			if (!lineObj.getString("type").equals("POST"))
 				return;
 			
+			String id = lineObj.getString("id");
 			String city = getCity(lineObj);
 			String country = getCountry(lineObj, city);
 			
@@ -119,41 +141,58 @@ public class HFeaturizeFacebookPosts {
 			}
 			
 			String message = lineObj.getString("message");
+			String location = null;
+			if (outputByCity && city != null) {
+				location = city;
+			} else if (!outputByCity && country != null) {
+				location = country;
+			} else {
+				return;
+			}
 			
+			List<String> sentences = getSentences(message);
+			JSONObject outputObj = new JSONObject();
+			
+			// Compute sentenceFeatures
+			for (int i = 0; i < sentences.size(); i++) {
+				String sentenceId = "s_" + id + "_" + i;
+				JSONObject sentenceObj = new JSONObject();
+				for (UnrestFeature feature : this.sentenceFeatures) {
+					String featureName = feature.getName();
+					Map<String, Integer> featureValues = feature.compute(message, this.date, location);
+					for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
+						if (featureValue.getKey().trim().length() == 0)
+							continue;
+						sentenceObj.put(featureName + "_" + featureValue.getKey(), featureValue);
+					}
+				}
+				
+				outputObj.put(sentenceId, sentenceObj);
+			}
+			
+			JSONObject featuresObj = new JSONObject();
+			// Compute rest of features
 			for (UnrestFeature feature : this.features) {
 				String featureName = feature.getName();
-				Map<String, Integer> featureValues = feature.compute(message, this.date, null); // FIXME: If necessary later, compute separately for city and country
+				Map<String, Integer> featureValues = feature.compute(message, this.date, location);
 				for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
 					if (featureValue.getKey().trim().length() == 0)
 						continue;
 					
-					/* Output for city */
-					if (city != null) {
-						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
-						keyStr = keyStr.append(featureName).append("\t");
-						keyStr = keyStr.append(city).append("\t");
-						keyStr = keyStr.append(featureValue.getKey());
-						
-						this.key.set(keyStr.toString().trim());
-						this.value.set(featureValue.getValue());
-						context.write(this.key, this.value);
-					}
-					
-					/* Output for country */
-					if (country != null) {
-						StringBuilder keyStr = new StringBuilder();
-						keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime())).append("\t");
-						keyStr = keyStr.append(featureName).append("\t");
-						keyStr = keyStr.append(country).append("\t");
-						keyStr = keyStr.append(featureValue.getKey());
-						
-						this.key.set(keyStr.toString().trim());
-						this.value.set(featureValue.getValue());
-						context.write(this.key, this.value);
-					}
+					featuresObj.put(featureName + "_" + featureValue.getKey(), featureValue.getValue());
 				}
 			}
+			
+			outputObj.put("s_0", featuresObj);
+			
+			StringBuilder keyStr = new StringBuilder();
+			keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime()));
+			keyStr = keyStr.append("_");
+			keyStr = keyStr.append(location);
+			
+			this.key.set(keyStr.toString());
+			this.value.set(outputObj.toString());
+			context.write(this.key, this.value);
 		}
 		
 		private String getCity(JSONObject postObj) {
@@ -217,20 +256,65 @@ public class HFeaturizeFacebookPosts {
 			else
 				return false;
 		}
-	}
-
-	public static class FeaturizeFacebookPostsReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-		private Text outKey = new Text();
-		private IntWritable outValue = new IntWritable();
 		
-		public void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-			int sum = 0;
-			for (IntWritable value : values) {
-				sum += value.get();
+		private List<String> getSentences(String message) {
+			Reader reader = new StringReader(message);
+			DocumentPreprocessor dp = new DocumentPreprocessor(reader);
+
+			List<String> sentenceList = new ArrayList<String>();
+			Iterator<List<HasWord>> it = dp.iterator();
+			while (it.hasNext()) {
+			   StringBuilder sentenceSb = new StringBuilder();
+			   List<HasWord> sentence = it.next();
+			   for (HasWord token : sentence) {
+			      if(sentenceSb.length()>1) {
+			         sentenceSb.append(" ");
+			      }
+			      sentenceSb.append(token);
+			   }
+			   sentenceList.add(sentenceSb.toString());
 			}
 			
-			this.outKey.set(key.toString());
-			this.outValue.set(sum);
+			return sentenceList;
+		}
+	}
+
+	public static class FeaturizeFacebookPostSRegReducer extends Reducer<Text, Text, Text, Text> {
+		private Text outKey = new Text();
+		private Text outValue = new Text();
+		
+		@SuppressWarnings("rawtypes")
+		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+			JSONObject outputObj = new JSONObject();
+			outputObj.put("s_0", new JSONObject());
+			
+			for (Text value : values) {
+				JSONObject valueObj = JSONObject.fromObject(value.toString());
+				
+				Set entries = valueObj.entrySet();
+				for (Object o : entries) {
+					Entry e = (Entry)o;
+					String sentenceKey = e.getKey().toString();
+					JSONObject sentenceObj = (JSONObject)e.getValue();
+					if (!sentenceKey.equals("s_0"))
+						outputObj.put(sentenceKey, sentenceObj);
+					else {
+						Set featureEntries = sentenceObj.entrySet();
+						for (Object featureO : featureEntries) {
+							Entry featureE = (Entry)featureO;
+							String featureKey = featureE.getKey().toString();
+							int featureValue = (Integer)featureE.getValue();
+							if (!outputObj.getJSONObject("s_0").containsKey(featureKey) || featureKey.startsWith("fixedEffects"))
+								outputObj.getJSONObject("s_0").put(featureKey, featureValue);
+							else
+								outputObj.getJSONObject("s_0").put(featureKey, outputObj.getJSONObject("s_0").getInt(featureKey) + featureValue);
+						}
+					}
+				}
+			}
+			
+			this.outKey.set(key);
+			this.outValue.set(outputObj.toString());
 			context.write(this.outKey, this.outValue);
 		}
 	}
@@ -240,14 +324,13 @@ public class HFeaturizeFacebookPosts {
 		String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
 		conf.set("PROPERTIES_PATH", otherArgs[0]);
 		@SuppressWarnings("deprecation")
-		Job job = new Job(conf, "HFeaturizeFacebookPosts");
-		job.setJarByClass(HFeaturizeFacebookPosts.class);
-		job.setMapperClass(FeaturizeFacebookPostsMapper.class);
-		job.setCombinerClass(FeaturizeFacebookPostsReducer.class);
-		job.setReducerClass(FeaturizeFacebookPostsReducer.class);
+		Job job = new Job(conf, "HFeaturizeFacebookPostsSReg");
+		job.setJarByClass(HFeaturizeFacebookPostSReg.class);
+		job.setMapperClass(FeaturizeFacebookPostSRegMapper.class);
+		job.setCombinerClass(FeaturizeFacebookPostSRegReducer.class);
+		job.setReducerClass(FeaturizeFacebookPostSRegReducer.class);
 		job.setOutputKeyClass(Text.class);
-		job.setOutputValueClass(IntWritable.class);
-		
+		job.setOutputValueClass(Text.class);
 		
 		FileInputFormat.addInputPath(job, new Path(otherArgs[1]));
 		FileOutputFormat.setOutputPath(job, new Path(otherArgs[2]));

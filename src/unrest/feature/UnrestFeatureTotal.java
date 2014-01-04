@@ -15,7 +15,7 @@ public class UnrestFeatureTotal extends UnrestFeature {
 	}
 
 	@Override
-	public Map<String, Integer> compute(String text, Calendar textTime) {
+	public Map<String, Integer> compute(String text, Calendar textTime, String location) {
 		Map<String, Integer> values = new HashMap<String, Integer>(1);
 		values.put("total", 1);
 		return values;
