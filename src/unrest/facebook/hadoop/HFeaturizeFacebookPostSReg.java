@@ -44,16 +44,18 @@ import ark.data.Gazetteer;
  * 
  * And outputs lines of the form:
  * 
- * [Date]_[Location]	{{"s_0":{"[f_00]":[v_01], "[f_01]":[v_01],...}, "[s_1]":{"[f_10]":v_10,"[f_11]":v_11,...}...}
+ * [Date].[Location]	[Sentence ID i]	{"[f_i0]":[v_i1], "[f_i1]":[v_i1],...}
  * 
- * The JSON object stores values of features calculated per sentence within 
- * nested JSON objects with keys s_i. The JSON object for s_0 stores values 
- * of features that are aggregated across all sentences (s_0 is a fake 
+ * Each line gives a JSON object storing values of features for the sentence.
+ * JSON objects with Sentence ID "s_0" store values of features aggregated 
+ * across all sentences for a given date and location (s_0 is a fake 
  * sentence). These features are aggregated across all sentences because it 
- * doesn't make sense to regularize them out by sentence.
+ * doesn't make sense to regularize them out by sentence in the sentence
+ * regularization model.
  * 
- * The output can be used as one of the inputs to Dani's sentence regularizing
- * model.
+ * The output can be fed into unrest.facebook.AggregateSRegFeatures to convert
+ * to the proper format for Dani's sentence regularizing model.
+ * 
  */
 public class HFeaturizeFacebookPostSReg {
 	private static String languageFilter = "es";
@@ -149,11 +151,17 @@ public class HFeaturizeFacebookPostSReg {
 			} else {
 				return;
 			}
+
+			
+			StringBuilder keyStrBuilder = new StringBuilder();
+			keyStrBuilder = keyStrBuilder.append(this.outputDateFormat.format(this.date.getTime()));
+			keyStrBuilder = keyStrBuilder.append(".");
+			keyStrBuilder = keyStrBuilder.append(location);
+			String keyStr = keyStrBuilder.toString();
 			
 			List<String> sentences = getSentences(message);
-			JSONObject outputObj = new JSONObject();
 			
-			// Compute sentenceFeatures
+			// Compute sentence features
 			for (int i = 0; i < sentences.size(); i++) {
 				String sentenceId = "s_" + id + "_" + i;
 				JSONObject sentenceObj = new JSONObject();
@@ -163,11 +171,13 @@ public class HFeaturizeFacebookPostSReg {
 					for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
 						if (featureValue.getKey().trim().length() == 0)
 							continue;
-						sentenceObj.put(featureName + "_" + featureValue.getKey(), featureValue);
+						sentenceObj.put(featureName + "_" + featureValue.getKey(), featureValue.getValue());
 					}
 				}
 				
-				outputObj.put(sentenceId, sentenceObj);
+				this.key.set(keyStr);
+				this.value.set(sentenceId + "\t" + sentenceObj.toString());
+				context.write(this.key, this.value);
 			}
 			
 			JSONObject featuresObj = new JSONObject();
@@ -182,16 +192,10 @@ public class HFeaturizeFacebookPostSReg {
 					featuresObj.put(featureName + "_" + featureValue.getKey(), featureValue.getValue());
 				}
 			}
+
 			
-			outputObj.put("s_0", featuresObj);
-			
-			StringBuilder keyStr = new StringBuilder();
-			keyStr = keyStr.append(this.outputDateFormat.format(this.date.getTime()));
-			keyStr = keyStr.append("_");
-			keyStr = keyStr.append(location);
-			
-			this.key.set(keyStr.toString());
-			this.value.set(outputObj.toString());
+			this.key.set(keyStr);
+			this.value.set("s_0\t" + featuresObj.toString());
 			context.write(this.key, this.value);
 		}
 		
@@ -285,36 +289,34 @@ public class HFeaturizeFacebookPostSReg {
 		
 		@SuppressWarnings("rawtypes")
 		public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-			JSONObject outputObj = new JSONObject();
-			outputObj.put("s_0", new JSONObject());
-			
+			JSONObject aggregateS0Obj = new JSONObject();
 			for (Text value : values) {
-				JSONObject valueObj = JSONObject.fromObject(value.toString());
+				String[] valueParts = value.toString().split("\t");
+				String sentenceId = valueParts[0];
+				String valueObjStr = valueParts[1];
 				
-				Set entries = valueObj.entrySet();
-				for (Object o : entries) {
-					Entry e = (Entry)o;
-					String sentenceKey = e.getKey().toString();
-					JSONObject sentenceObj = (JSONObject)e.getValue();
-					if (!sentenceKey.equals("s_0"))
-						outputObj.put(sentenceKey, sentenceObj);
-					else {
-						Set featureEntries = sentenceObj.entrySet();
-						for (Object featureO : featureEntries) {
-							Entry featureE = (Entry)featureO;
-							String featureKey = featureE.getKey().toString();
-							int featureValue = (Integer)featureE.getValue();
-							if (!outputObj.getJSONObject("s_0").containsKey(featureKey) || featureKey.startsWith("fixedEffects"))
-								outputObj.getJSONObject("s_0").put(featureKey, featureValue);
-							else
-								outputObj.getJSONObject("s_0").put(featureKey, outputObj.getJSONObject("s_0").getInt(featureKey) + featureValue);
-						}
+				if (!sentenceId.equals("s_0")) {
+					this.outKey.set(key);
+					this.outValue.set(value);
+					context.write(this.outKey, this.outValue);
+				} else {
+					JSONObject valueObj = JSONObject.fromObject(valueObjStr);
+					Set entries = valueObj.entrySet();
+					for (Object o : entries) {
+						Entry e = (Entry)o;
+						String feature = e.getKey().toString();
+						Integer featureValue = (Integer)e.getValue();
+						
+						if (!aggregateS0Obj.containsKey("s_0"))
+							aggregateS0Obj.put(feature, featureValue);
+						else
+							aggregateS0Obj.put(feature, (Integer)aggregateS0Obj.get("s_0") + featureValue);
 					}
 				}
 			}
 			
 			this.outKey.set(key);
-			this.outValue.set(outputObj.toString());
+			this.outValue.set("s_0\t" + aggregateS0Obj.toString());
 			context.write(this.outKey, this.outValue);
 		}
 	}
