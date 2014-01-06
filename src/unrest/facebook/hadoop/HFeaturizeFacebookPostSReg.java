@@ -167,7 +167,7 @@ public class HFeaturizeFacebookPostSReg {
 				JSONObject sentenceObj = new JSONObject();
 				for (UnrestFeature feature : this.sentenceFeatures) {
 					String featureName = feature.getName();
-					Map<String, Integer> featureValues = feature.compute(message, this.date, location);
+					Map<String, Integer> featureValues = feature.compute(sentences.get(i), this.date, location);
 					for (Entry<String, Integer> featureValue : featureValues.entrySet()) {
 						if (featureValue.getKey().trim().length() == 0)
 							continue;

@@ -2,9 +2,10 @@ package unrest.facebook;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+
+import ark.util.FileUtil;
 
 import net.sf.json.JSONObject;
 
@@ -26,7 +27,7 @@ public class AggregateSRegFeatures {
 		String outputPath = args[1];
 		
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(inputPath));
+			BufferedReader br = FileUtil.getFileReader(inputPath);
 			BufferedWriter bw = new BufferedWriter(new FileWriter(outputPath));
 			String line = null;
 			String curDateLocation = null;

@@ -61,7 +61,7 @@ public class HFilterFacebookDataToPosts {
 					JSONObject outputObj = new JSONObject();
 					outputObj.put("date", date);
 					outputObj.put("message", message);
-					outputObj.put("id", id);
+					outputObj.put("id", datumObj.getString("id"));
 					outputObj.put("type", "FEED");
 					
 					this.value.set(outputObj.toString());
