@@ -4,12 +4,12 @@ This repository contains code and resources for the following purposes related
 to the unrest prediction task within the OSI project:
 
 1.	Scraping data from Facebook
-2.	Featurizing Facebook data for use in a prediction model
+2.	Featurizing Facebook data for use in prediction models
 3.	Finding users on Twitter which have a large number of unrest related posts
 
-The prediction model in 2 is a logistic regression model which was initially
+One prediction model for 2 is a logistic regression model which was initially
 built for Twitter data.  This model is described in the docs/Twitter_Report.pdf 
-file.
+file.  Another is a "sentence-regularization" model.
 
 The first section below describes how the code is organized, and the second
 section describes how to run things.
@@ -24,9 +24,8 @@ plus location plus unrest term criteria for detecting unrest posts.
 *	*unrest.facebook* - Code for scraping Facebook data (in FacebookScraper), 
 code for detecting unrest posts within the scraped data using BBN's criteria 
 (in HDetectUnrestFacebookPosts), and code for featurizing the Facebook data so 
-that it can be pushed into David's logistic regression model (distributed 
-across several classes and called by runFacebookDataFeaturizer.sh in the top 
-level directory).
+that it can be pushed into the models (distributed across several classes and 
+called by runFacebookDataFeaturizer.sh in the top level directory).
 
 *	*unrest.feature* - Classes implementing features that are currently used
 by the featurization code in unrest.facebook to push the Facebook code into
