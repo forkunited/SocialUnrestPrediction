@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import ark.util.FileUtil;
 
@@ -32,7 +34,7 @@ public class AggregateSRegFeatures {
 			String line = null;
 			String curDateLocation = null;
 			JSONObject curObj = new JSONObject();
-			
+			Set<String> dateLocations = new HashSet<String>();
 			while ((line = br.readLine()) != null) {
 				String[] lineParts = line.split("\\t");
 				String dateLocation = lineParts[0];
@@ -45,6 +47,13 @@ public class AggregateSRegFeatures {
 					
 					curDateLocation = dateLocation;
 					curObj = new JSONObject();
+					
+					if (dateLocations.contains(curDateLocation)) {
+						System.out.println("ERROR: Duplicate date/location " + curDateLocation);
+						System.exit(0);
+					}
+					System.out.println("Aggregating for date/location: " + curDateLocation);
+					dateLocations.add(curDateLocation);
 				}
 				
 				curObj.put(sentenceId, featureObjStr);
