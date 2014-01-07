@@ -21,9 +21,9 @@ public class UnrestFeatureFixedEffects extends UnrestFeature {
 
 		// Add effects:
 		// Day of week
-		// Location x Month
+		// Location 
 		values.put("dayOfWeek_" + textTime.get(Calendar.DAY_OF_WEEK), 1);
-		values.put("locationMonth_" + location + "_" + textTime.get(Calendar.MONTH) + "_" + textTime.get(Calendar.YEAR), 1);
+		values.put("location_" + location, 1);
 		
 		return values;
 	}

@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -13,9 +14,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import unrest.util.LocationLanguageMap;
+
 import ark.util.FileUtil;
 
 public class GSRLocationDayBeforeToResponses {
+	private static String languageFilter = "es";
 	private static String startDateStr = "01-01-2013";
 	private static String endDateStr = "05-31-2013";
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("MM-dd-yyyy");
@@ -23,6 +27,7 @@ public class GSRLocationDayBeforeToResponses {
 	public static void main(String[] args) {
 		String inputPath = args[0];
 		String outputPath = args[1];
+		LocationLanguageMap languageMap = new LocationLanguageMap(false);
 		
 		try {
 			Map<String, Set<String>> locationsToDates = loadGSRLocationDayBefore(inputPath);
@@ -30,6 +35,9 @@ public class GSRLocationDayBeforeToResponses {
 			for (Entry<String, Set<String>> entry : locationsToDates.entrySet()) {
 				String location = entry.getKey();
 				Set<String> positiveDates = entry.getValue();
+				
+				if (!languageMap.getLanguage(location).equals(languageFilter))
+					continue;
 				
 				Date date = dateFormat.parse(startDateStr);
 				Date endDate = dateFormat.parse(endDateStr);
@@ -56,19 +64,26 @@ public class GSRLocationDayBeforeToResponses {
 		}
 	}
 	
-	private static Map<String, Set<String>> loadGSRLocationDayBefore(String path) throws IOException {
+	private static Map<String, Set<String>> loadGSRLocationDayBefore(String path) throws IOException, ParseException {
 		BufferedReader br = FileUtil.getFileReader(path);
 		Map<String, Set<String>> locationsToDates = new HashMap<String, Set<String>>();
+		
+		Date startDate = dateFormat.parse(startDateStr);
+		Date endDate = dateFormat.parse(endDateStr);
 		
 		String line = null;
 		while ((line = br.readLine()) != null) {
 			String[] lineParts = line.split("\t");
 			String location = lineParts[0];
-			String date = lineParts[1];
+			String dateStr = lineParts[1];
+			Date date = dateFormat.parse(dateStr);
 			
+			if (date.getTime() < startDate.getTime() || date.getTime() > endDate.getTime())
+				continue;
+				
 			if (!locationsToDates.containsKey(location))
 				locationsToDates.put(location, new HashSet<String>());
-			locationsToDates.get(location).add(date);
+			locationsToDates.get(location).add(dateStr);
 		}
 		
 		br.close();
