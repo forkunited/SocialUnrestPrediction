@@ -89,6 +89,14 @@
             <arg value="${maxDate}"/>
         </java>
     </target>
+    <target name="AggregateSRegFeatures">
+        <java classname="unrest.facebook.AggregateSRegFeatures" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx2G -XX:+UseParallelGC -XX:ParallelGCThreads=4 -XX:ConcGCThreads=4"/>
+            <classpath refid="SocialUnrestPrediction.classpath"/>
+            <arg value="${inputPath}"/>
+            <arg value="${outputPath}"/>
+        </java>
+    </target>
     <target name="build-jar">
       <jar destfile="Unrest.jar"
            basedir="bin">

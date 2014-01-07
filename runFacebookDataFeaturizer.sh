@@ -38,6 +38,10 @@ hadoop jar Unrest.jar unrest.facebook.hadoop.HFilterFacebookDataToPosts -D mapre
 #hadoop dfs -copyToLocal $facebookHdfsTempDirPath/FeatureSReg/part-r-* $facebookTempDirPath
 #cat $facebookTempDirPath/part-r-* > $facebookFeatureSRegOutputPath
 
+# Aggregate sentence-regularization featurized posts into JSON objects for each date/location
+#cd $socialUnrestPredictionProjectDirPath
+#ant AggregateSRegFeatures -DinputPath="$facebookFeatureSRegOutputPath" -DoutputPath="$facebookFeatureSRegOutputPath.agg"
+
 # Count number of posts per date/location
 #hadoop dfs -rmr $facebookHdfsTempDirPath/DateLocationPostCounts
 #hadoop jar Unrest.jar unrest.facebook.hadoop.HAggregateFeaturesByDateLocation -D mapred.reduce.tasks=20 $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES $facebookHdfsTempDirPath/Features/part-r-* $facebookHdfsTempDirPath/DateLocationPostCounts
