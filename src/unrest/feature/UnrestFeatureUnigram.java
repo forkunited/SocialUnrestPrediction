@@ -26,7 +26,7 @@ public class UnrestFeatureUnigram extends UnrestFeature {
 			
 			String line = null;
 			while ((line = br.readLine()) != null) {
-				String[] lineParts = line.split("\\t");
+				String[] lineParts = line.split("\t");
 				String[] keyParts = lineParts[0].split("_");
 				if (!keyParts[0].equals(getName()))
 					continue;
