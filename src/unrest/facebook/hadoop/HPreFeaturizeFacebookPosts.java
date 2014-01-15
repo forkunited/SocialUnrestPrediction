@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +45,9 @@ import ark.data.Gazetteer;
  */
 public class HPreFeaturizeFacebookPosts {
 	private static String languageFilter = "es";
+	private static String minDateStr = "01-01-2013";
+	private static String maxDateStr = "05-31-2013";
+	
 	private static boolean computeByCity = false;
 	
 	public static class PreFeaturizeFacebookPostsMapper extends Mapper<Object, Text, Text, IntWritable> {
@@ -58,6 +62,8 @@ public class HPreFeaturizeFacebookPosts {
 		private Gazetteer locationLanguageMapGazetteer;
 		private SimpleDateFormat inputDateFormat; 
 		private Calendar date; 
+		private Date minDate;
+		private Date maxDate;
 		
 		protected List<UnrestFeature> constructFeatures(UnrestProperties properties) {		
 			UnrestFeature unigram = new UnrestFeatureUnigram();
@@ -77,6 +83,14 @@ public class HPreFeaturizeFacebookPosts {
 			this.locationLanguageMapGazetteer = new Gazetteer("LocationLanguageMap", this.properties.getLocationLanguageMapGazetteerPath());
 			this.inputDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss+SSSS");
 			this.date = Calendar.getInstance();
+			
+			SimpleDateFormat df = new SimpleDateFormat("MM-dd-yyyy");
+			try {
+				this.minDate = df.parse(minDateStr);
+				this.maxDate = df.parse(maxDateStr);
+			} catch (ParseException e) {
+				
+			}
 		}
 		
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
@@ -109,6 +123,9 @@ public class HPreFeaturizeFacebookPosts {
 			} catch (ParseException e) {
 				return;
 			}
+			
+			if (this.minDate.getTime() > this.date.getTime().getTime() || this.maxDate.getTime() < this.date.getTime().getTime())
+				return;
 			
 			String message = lineObj.getString("message");
 
