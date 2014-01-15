@@ -97,7 +97,7 @@ public class HFeaturizeFacebookPostSReg {
 		}
 		
 		protected List<UnrestFeature> constructSentenceFeatures(UnrestProperties properties) {
-			UnrestFeature unigram = new UnrestFeatureUnigram();
+			UnrestFeature unigram = new UnrestFeatureUnigram(properties.getUnigramFeatureVocabularyPath(), 5);
 			List<UnrestFeature> features = new ArrayList<UnrestFeature>();
 			
 			features.add(unigram);

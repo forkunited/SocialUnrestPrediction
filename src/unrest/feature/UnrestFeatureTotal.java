@@ -20,5 +20,12 @@ public class UnrestFeatureTotal extends UnrestFeature {
 		values.put("total", 1);
 		return values;
 	}
+	
+	@Override
+	public Map<String, Integer> preCompute(String text, Calendar textTime,
+			String location) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

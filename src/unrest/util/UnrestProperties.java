@@ -20,6 +20,8 @@ public class UnrestProperties extends ARKProperties {
 	
 	private int maxThreads;
 	
+	private String unigramFeatureVocabularyPath;
+	
 	public UnrestProperties(boolean useHdfs) {
 		this(useHdfs, "unrest.properties");
 	}
@@ -37,6 +39,8 @@ public class UnrestProperties extends ARKProperties {
 		this.facebookDataScrapeDirPath = loadProperty("facebookDataScrapeDirPath");
 		
 		this.maxThreads = Integer.parseInt(loadProperty("maxThreads"));	
+		
+		this.unigramFeatureVocabularyPath = (useHdfs) ? loadProperty("hdfsUnigramFeatureVocabularyPath") : loadProperty("localUnigramFeatureVocabularyPath");
 	}
 	
 	public String getUnrestTermGazetteerPath() {
@@ -93,5 +97,9 @@ public class UnrestProperties extends ARKProperties {
 	
 	public int getMaxThreads() {
 		return this.maxThreads;
+	}
+	
+	public String getUnigramFeatureVocabularyPath() {
+		return this.unigramFeatureVocabularyPath;
 	}
 }

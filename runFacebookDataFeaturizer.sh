@@ -20,6 +20,16 @@ hadoop dfs -mkdir $facebookHdfsTempDirPath
 hadoop dfs -rmr $facebookHdfsTempDirPath/Posts
 hadoop jar Unrest.jar unrest.facebook.hadoop.HFilterFacebookDataToPosts -D mapred.reduce.tasks=170 $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES $facebookHdfsInputDirPath $facebookHdfsTempDirPath/Posts
 
+# Pre-featurize posts (compute vocabularies for features)
+#hadoop dfs -rmr $facebookHdfsTempDirPath/PreFeatures
+#hadoop jar Unrest.jar unrest.facebook.hadoop.HPreFeaturizeFacebookPosts -D mapred.reduce.tasks=170 $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES $facebookHdfsTempDirPath/Posts/part-r-* $facebookHdfsTempDirPath/PreFeatures
+
+# Copy pre-featurized posts to local file system, and then back to hdfs in single file
+#rm -rf $facebookTempDirPath/*
+#hadoop dfs -copyToLocal $facebookHdfsTempDirPath/PreFeatures/part-r-* $facebookTempDirPath
+#cat $facebookTempDirPath/part-r-* > $localUnigramFeatureVocabularyPath
+#hadoop dfs -copyFromLocal $localUnigramFeatureVocabularyPath $hdfsUnigramFeatureVocabularyPath
+
 # Featurize posts
 #hadoop dfs -rmr $facebookHdfsTempDirPath/Features
 #hadoop jar Unrest.jar unrest.facebook.hadoop.HFeaturizeFacebookPosts -D mapred.reduce.tasks=170 $HDFS_SOCIAL_UNREST_PREDICTION_PROPERTIES $facebookHdfsTempDirPath/Posts/part-r-* $facebookHdfsTempDirPath/Features
