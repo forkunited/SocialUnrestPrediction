@@ -79,7 +79,7 @@ public class HFeaturizeFacebookPostSReg {
 		protected List<UnrestFeature> constructFeatures(UnrestProperties properties) {
 			Gazetteer unrestTerms = new Gazetteer("UnrestTermLarge", properties.getUnrestTermLargeGazetteerPath());
 			
-			UnrestFeature unigram = new UnrestFeatureUnigram();
+			UnrestFeature unigram = new UnrestFeatureUnigram(properties.getUnigramFeatureVocabularyPath(), 20);
 			UnrestFeature tom = new UnrestFeatureFutureDate(true);
 			UnrestFeature hand = new UnrestFeatureGazetteer(unrestTerms);
 			UnrestFeature handTom = new UnrestFeatureConjunction("handTom", hand, tom);
