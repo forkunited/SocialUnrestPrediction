@@ -27,12 +27,18 @@ public class UnrestFeatureUnigram extends UnrestFeature {
 			String line = null;
 			while ((line = br.readLine()) != null) {
 				String[] lineParts = line.split("\t");
-				String[] keyParts = lineParts[0].split("_");
-				if (!keyParts[0].equals(getName()))
+				if (lineParts.length < 2)
 					continue;
 				
-				String term = keyParts[1];
-				int value = Integer.parseInt(lineParts[1]);
+				int keySplitIndex = lineParts[0].indexOf("_");
+				if (keySplitIndex < 0 || !lineParts[0].substring(0, keySplitIndex).equals(getName()))
+					continue;
+				
+				String term = lineParts[0].substring(keySplitIndex + 1, lineParts[0].length());
+				if (term.length() == 0)
+					continue;
+				
+				int value = Integer.parseInt(lineParts[lineParts.length - 1]);
 				
 				if (value < vocabularyCountThreshold)
 					continue;

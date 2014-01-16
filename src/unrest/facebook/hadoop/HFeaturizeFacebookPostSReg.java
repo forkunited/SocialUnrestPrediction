@@ -152,7 +152,6 @@ public class HFeaturizeFacebookPostSReg {
 				return;
 			}
 
-			
 			StringBuilder keyStrBuilder = new StringBuilder();
 			keyStrBuilder = keyStrBuilder.append(this.outputDateFormat.format(this.date.getTime()));
 			keyStrBuilder = keyStrBuilder.append(".");
