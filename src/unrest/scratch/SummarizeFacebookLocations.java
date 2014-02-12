@@ -80,7 +80,9 @@ public class SummarizeFacebookLocations {
 					timePosts++;
 					
 					try {
-						if (!post.has("place") || !post.getJsonObject("place").has("location"))
+						if (!post.has("place") || !post.getJsonObject("place").has("location") ||
+								(!post.getJsonObject("place").getJsonObject("location").has("country") &&
+									!post.getJsonObject("place").getJsonObject("location").has("city")))
 							continue;
 					} catch (Exception e) {
 						continue;
