@@ -79,8 +79,13 @@ public class SummarizeFacebookLocations {
 					
 					timePosts++;
 					
-					if (!post.has("place") || !post.getJsonObject("place").has("location"))
+					try {
+						if (!post.has("place") || !post.getJsonObject("place").has("location"))
+							continue;
+					} catch (Exception e) {
 						continue;
+					}
+					
 					String country = null;
 					String city = null;
 					if (post.getJsonObject("place").getJsonObject("location").has("country")) {
